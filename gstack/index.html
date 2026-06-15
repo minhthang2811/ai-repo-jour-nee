@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gstack — Interactive Explainer</title>
+    <meta name="description" content="An interactive visual explainer for gstack: Use Garry Tan's exact Claude Code setup: 23 opinionated tools that serve as CEO, Designer, Eng Manager, Release Manager, Doc Engineer, and QA.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121f;
+            --bg-tertiary: #16162a;
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-cyan: #00d2ff;
+            --accent-pink: #f093fb;
+
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --text-muted: #5a6178;
+
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover-bg: rgba(255, 255, 255, 0.06);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --shadow-glow: 0 0 35px rgba(102, 126, 234, 0.18);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* ===== GLASSMORPHISM CARDS ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.25);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-4px);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+            margin-top: 1rem;
+        }
+
+        .code-block pre {
+            white-space: pre;
+            word-wrap: normal;
+        }
+
+        .code-block .comment { color: #5a6178; }
+        .code-block .keyword { color: #c792ea; }
+        .code-block .string { color: #c3e88d; }
+        .code-block .function { color: #82aaff; }
+        .code-block .number { color: #f78c6c; }
+        .code-block .command { color: var(--accent-cyan); font-weight: bold; }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: var(--text-primary);
+        }
+
+        /* ===== SECTION TITLE PATTERN ===== */
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 720px;
+            margin-bottom: 3.5rem;
+        }
+
+        /* ===== STATS BADGES ===== */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.6rem 1.4rem;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .stat-badge .stat-icon {
+            font-size: 1.1rem;
+        }
+
+        .stat-badge .stat-value {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.2rem 0;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0.8rem 0;
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo-glow {
+            color: var(--accent-cyan);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-github {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-github:hover {
+            opacity: 1;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 850px;
+            padding: 8rem 2rem 4rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            background: rgba(0, 210, 255, 0.05);
+            padding: 0.4rem 1.4rem;
+            border-radius: 999px;
+            margin-bottom: 2rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            font-size: clamp(2.8rem, 6vw, 5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.8rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-description {
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 2rem;
+            padding: 1rem 2.2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 1rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .hero-cta svg {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(5px); }
+            60% { transform: translateY(2px); }
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+            margin-top: 2rem;
+        }
+
+        .problem-card {
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-pink);
+            opacity: 0.7;
+        }
+
+        .problem-icon {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .problem-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.98rem;
+            line-height: 1.6;
+        }
+
+        .solution-card {
+            margin-top: 3rem;
+            padding: 3.5rem;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(118, 75, 162, 0.06));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solution-card::after {
+            content: '';
+            position: absolute;
+            top: -150px;
+            right: -150px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .solution-card-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .solution-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 780px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* ===== ARCHITECTURE PIPELINE ===== */
+        .arch-pipeline {
+            position: relative;
+            max-width: 1000px;
+            margin: 5rem auto 0;
+            padding: 0 2rem;
+        }
+
+        /* Central animated spine */
+        .arch-pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg,
+                rgba(102, 126, 234, 0),
+                rgba(102, 126, 234, 0.6) 5%,
+                rgba(118, 75, 162, 0.6) 40%,
+                rgba(0, 210, 255, 0.6) 70%,
+                rgba(240, 147, 251, 0.6) 95%,
+                rgba(240, 147, 251, 0)
+            );
+            border-radius: 2px;
+        }
+
+        /* Flowing particle dot on the spine */
+        .arch-pipeline::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 8px;
+            height: 8px;
+            transform: translateX(-50%);
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent-cyan), 0 0 30px rgba(0, 210, 255, 0.6);
+            animation: flowDown 5s ease-in-out infinite;
+        }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Each step row */
+        .arch-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 4rem;
+        }
+
+        .arch-step:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Alternate layout */
+        .arch-step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .arch-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        /* The node circle on the spine */
+        .arch-step-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            z-index: 2;
+            border: 2px solid;
+            transition: var(--transition);
+        }
+
+        .arch-step-node::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0.35;
+            animation: nodePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.35; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Apply unique colors per step using nth-child */
+        .arch-step:nth-child(1) .arch-step-node { background: rgba(102, 126, 234, 0.15); border-color: #667eea; }
+        .arch-step:nth-child(1) .arch-step-node::before { border-color: #667eea; }
+        .arch-step:nth-child(2) .arch-step-node { background: rgba(118, 75, 162, 0.15); border-color: #764ba2; }
+        .arch-step:nth-child(2) .arch-step-node::before { border-color: #764ba2; }
+        .arch-step:nth-child(3) .arch-step-node { background: rgba(0, 210, 255, 0.15); border-color: #00d2ff; }
+        .arch-step:nth-child(3) .arch-step-node::before { border-color: #00d2ff; }
+        .arch-step:nth-child(4) .arch-step-node { background: rgba(240, 147, 251, 0.15); border-color: #f093fb; }
+        .arch-step:nth-child(4) .arch-step-node::before { border-color: #f093fb; }
+        .arch-step:nth-child(5) .arch-step-node { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+        .arch-step:nth-child(5) .arch-step-node::before { border-color: #ffd700; }
+        .arch-step:nth-child(6) .arch-step-node { background: rgba(0, 230, 118, 0.15); border-color: #00e676; }
+        .arch-step:nth-child(6) .arch-step-node::before { border-color: #00e676; }
+        .arch-step:nth-child(7) .arch-step-node { background: rgba(255, 107, 107, 0.15); border-color: #ff6b6b; }
+        .arch-step:nth-child(7) .arch-step-node::before { border-color: #ff6b6b; }
+        .arch-step:nth-child(8) .arch-step-node { background: rgba(255, 152, 0, 0.15); border-color: #ff9800; }
+        .arch-step:nth-child(8) .arch-step-node::before { border-color: #ff9800; }
+
+        /* Connector line from node to card */
+        .arch-step-connector {
+            flex: 0 0 70px;
+            height: 2px;
+            position: relative;
+        }
+
+        .arch-step-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        .arch-step:nth-child(even) .arch-step-connector::before {
+            background: linear-gradient(270deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        /* The card */
+        .arch-step-card {
+            flex: 1;
+            max-width: calc(50% - 95px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+            position: relative;
+        }
+
+        .arch-step-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-md);
+            padding: 1px;
+            background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.06) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .arch-step-card:hover {
+            background: var(--glass-hover-bg);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        /* Per step card hover borders */
+        .arch-step:nth-child(1) .arch-step-card:hover { border-color: rgba(102, 126, 234, 0.45); box-shadow: 0 0 30px rgba(102, 126, 234, 0.12); }
+        .arch-step:nth-child(2) .arch-step-card:hover { border-color: rgba(118, 75, 162, 0.45); box-shadow: 0 0 30px rgba(118, 75, 162, 0.12); }
+        .arch-step:nth-child(3) .arch-step-card:hover { border-color: rgba(0, 210, 255, 0.45); box-shadow: 0 0 30px rgba(0, 210, 255, 0.12); }
+        .arch-step:nth-child(4) .arch-step-card:hover { border-color: rgba(240, 147, 251, 0.45); box-shadow: 0 0 30px rgba(240, 147, 251, 0.12); }
+        .arch-step:nth-child(5) .arch-step-card:hover { border-color: rgba(255, 215, 0, 0.45); box-shadow: 0 0 30px rgba(255, 215, 0, 0.12); }
+        .arch-step:nth-child(6) .arch-step-card:hover { border-color: rgba(0, 230, 118, 0.45); box-shadow: 0 0 30px rgba(0, 230, 118, 0.12); }
+        .arch-step:nth-child(7) .arch-step-card:hover { border-color: rgba(255, 107, 107, 0.45); box-shadow: 0 0 30px rgba(255, 107, 107, 0.12); }
+        .arch-step:nth-child(8) .arch-step-card:hover { border-color: rgba(255, 152, 0, 0.45); box-shadow: 0 0 30px rgba(255, 152, 0, 0.12); }
+
+        .arch-step-card .card-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .arch-step-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .arch-step-card p {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Spacer to push cards to opposite sides */
+        .arch-step-spacer {
+            flex: 1;
+            max-width: calc(50% - 95px);
+        }
+
+        /* ===== USAGE SECTION ===== */
+        .usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+
+        .usage-step {
+            position: relative;
+            padding-left: 5.5rem;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 1.8rem;
+            top: 2rem;
+            font-family: var(--font-mono);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            opacity: 0.65;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .usage-step h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .usage-step p {
+            color: var(--text-secondary);
+            font-size: 0.98rem;
+            margin-bottom: 0.8rem;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 5rem 0 3rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .footer-line {
+            width: 300px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-cyan), var(--accent-pink), transparent);
+            margin: 0 auto 2.5rem;
+        }
+
+        .footer p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .footer a:hover {
+            color: var(--text-primary);
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+        }
+
+        .footer-sub {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.8rem;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .nav-links a:not(.nav-github) {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .stats {
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-pipeline::before,
+            .arch-pipeline::after {
+                left: 24px;
+            }
+
+            .arch-step {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 60px;
+                margin-bottom: 3rem;
+            }
+
+            .arch-step-node {
+                left: 24px;
+                top: 0;
+                transform: translateX(-50%);
+                width: 42px;
+                height: 42px;
+                font-size: 0.8rem;
+            }
+
+            .arch-step-connector {
+                display: none;
+            }
+
+            .arch-step-card {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .arch-step-spacer {
+                display: none;
+            }
+
+            .usage-step {
+                padding-left: 1.5rem;
+                padding-top: 4.5rem;
+            }
+
+            .step-number {
+                left: 1.5rem;
+                top: 1.5rem;
+            }
+
+            .section {
+                padding: 5rem 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1.2rem;
+            }
+
+            .hero-title {
+                font-size: 2.1rem;
+            }
+
+            .section-title {
+                font-size: 1.7rem;
+            }
+            
+            .stats {
+                gap: 0.8rem;
+            }
+            
+            .stat-badge {
+                font-size: 0.85rem;
+                padding: 0.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">g<span class="nav-logo-glow">stack</span></a>
+            <div class="nav-links">
+                <a href="#problem">Problem</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#usage">Usage</a>
+                <a href="https://github.com/garrytan/gstack" target="_blank" rel="noopener" class="nav-github" aria-label="GitHub Repository">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge">Open Source · TypeScript</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">gstack</span>
+            </h1>
+            <p class="hero-description">Use Garry Tan's exact Claude Code setup: 23 opinionated tools that serve as CEO, Designer, Eng Manager, Release Manager, Doc Engineer, and QA.</p>
+            <div class="stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">110K</span>
+                    <span>Stars</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🍴</span>
+                    <span class="stat-value">16.4K</span>
+                    <span>Forks</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💻</span>
+                    <span class="stat-value">Bun / Node</span>
+                </div>
+            </div>
+            <a href="#problem" class="hero-cta">
+                Explore gstack
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section" id="problem">
+        <div class="container">
+            <span class="section-label">The Problem</span>
+            <h2 class="section-title">
+                <span class="gradient-text">AI Autocomplete is Not Enough</span>
+            </h2>
+            <p class="section-description">
+                Using vanilla LLMs or simple chat prompts to write software often leads to unstructured "AI slop" — code that builds but lacks testing, strategic direction, and production readiness.
+            </p>
+            <div class="problem-grid">
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">😤</div>
+                    <h3>Cognitive Overload</h3>
+                    <p>Building products solo means playing every role: developer, QA, product manager, and designer. Switching context constantly drains your momentum.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🔧</div>
+                    <h3>Blind Code Execution</h3>
+                    <p>Without architectural blueprints, security threat models, or design systems, AI writing code creates tech debt, security holes, and inconsistent styles.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Deployment Bottlenecks</h3>
+                    <p>Testing features, hunting regression bugs in browsers, writing release notes, and publishing changes manually is slow and delays shipping.</p>
+                </div>
+            </div>
+            <div class="glass-card solution-card">
+                <div class="solution-card-content">
+                    <h3 class="gradient-text">gstack is the answer.</h3>
+                    <p>It turns your AI assistant into an autonomous software engineering team. By embedding 23 specialized agent roles directly into your terminal, gstack runs structured sprint workflows—helping one person ship like twenty.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <span class="section-label">Architecture</span>
+            <h2 class="section-title">
+                <span class="gradient-text">The Software Sprint Pipeline</span>
+            </h2>
+            <p class="section-description">
+                gstack orchestrates agents through a strict, sequential pipeline. Each command consumes state, writes blueprints, runs tests, and automates approvals.
+            </p>
+        </div>
+
+        <div class="arch-pipeline">
+            <!-- Step 1 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Brainstorming</h3>
+                    <p><strong>/office-hours</strong> interrogates feature intent. It pushes back on your framing, challenges assumptions, and outputs a concrete design doc.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">01</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">02</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">📋</div>
+                    <h3>Strategic Scope Review</h3>
+                    <p><strong>/plan-ceo-review</strong> evaluates features across 4 distinct scope levels: Expansion, Selective Expansion, Hold Scope, and Reduction.</p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🏗️</div>
+                    <h3>Technical Blueprinting</h3>
+                    <p><strong>/plan-eng-review</strong> designs technical workflows, ASCII state transition diagrams, test matrices, and error-handling trees.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">03</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">04</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🎨</div>
+                    <h3>Design & Aesthetics</h3>
+                    <p><strong>/plan-design-review</strong> benchmarks layout, checks contrast, audits responsiveness, and detects typical AI design slop.</p>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Autonomous Execution</h3>
+                    <p><strong>/autoplan</strong> ties reviews together, launches code implementation across multiple files, and commits modifications cleanly.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">05</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">06</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🛡️</div>
+                    <h3>Security & Bug Audits</h3>
+                    <p><strong>/review</strong> hunts logical errors and edge cases. <strong>/cso</strong> runs OWASP Top 10 + STRIDE threat modeling with zero false positives.</p>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🔌</div>
+                    <h3>Dynamic QA Verification</h3>
+                    <p><strong>/qa</strong> spins up Chromium via Puppeteer to load staging URLs, click through user paths, and generate regression tests.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">07</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">08</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">📦</div>
+                    <h3>Release & Learning</h3>
+                    <p><strong>/ship</strong> pushes changes and builds PRs. <strong>/learn</strong> aggregates repository patterns to compound agent intelligence.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section class="section" id="usage">
+        <div class="container">
+            <span class="section-label">Get Started</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How to Use</span>
+            </h2>
+            <p class="section-description">
+                gstack runs inside Claude Code. Install it globally or set it up for your team repository in seconds.
+            </p>
+
+            <div class="usage-steps">
+                <div class="usage-step glass-card">
+                    <div class="step-number">01</div>
+                    <h3>Install gstack globally</h3>
+                    <p>Open Claude Code inside any directory and run this single installer script.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">02</div>
+                    <h3>Enable Team Mode (Recommended)</h3>
+                    <p>Commit gstack integration directly into your project repo so teammates get it automatically.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">(cd ~/.claude/skills/gstack && ./setup --team) && ~/.claude/skills/gstack/bin/gstack-team-init required && git add .claude/ CLAUDE.md && git commit -m "require gstack for AI-assisted work"</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">03</div>
+                    <h3>Interrogate Your Ideas</h3>
+                    <p>Brainstorm your features before writing logic. gstack helps define a narrow, shippable product wedge.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">/office-hours</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">04</div>
+                    <h3>Auto-implement and Ship</h3>
+                    <p>Create planning blueprints, auto-apply changes across files, run checks, and merge.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">/autoplan
+/review
+/qa https://staging.myapp.com
+/ship</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-line"></div>
+        <div class="container">
+            <p>
+                Built from 
+                <a href="https://github.com/garrytan/gstack" target="_blank" rel="noopener">github.com/garrytan/gstack</a>
+            </p>
+            <p class="footer-sub">Generated with ❤️ · 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        /* ===== HERO PARTICLE BACKGROUND ===== */
+        function initHeroScene() {
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Particles
+            const particleCount = 600;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            const spread = 45;
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.015,
+                    y: (Math.random() - 0.5) * 0.015,
+                    z: (Math.random() - 0.5) * 0.015
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0x667eea,
+                size: 0.12,
+                transparent: true,
+                opacity: 0.5,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 22;
+
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    pos[i * 3] += velocities[i].x;
+                    pos[i * 3 + 1] += velocities[i].y;
+                    pos[i * 3 + 2] += velocities[i].z;
+
+                    // Wrap around limits
+                    for (let j = 0; j < 3; j++) {
+                        if (pos[i * 3 + j] > spread / 2) pos[i * 3 + j] = -spread / 2;
+                        if (pos[i * 3 + j] < -spread / 2) pos[i * 3 + j] = spread / 2;
+                    }
+                }
+                geometry.attributes.position.needsUpdate = true;
+
+                // Subtle follow mouse movement
+                camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.025;
+                camera.position.y += (mouseY * 1.5 - camera.position.y) * 0.025;
+                camera.lookAt(scene.position);
+
+                particles.rotation.y += 0.0004;
+                particles.rotation.x += 0.0001;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle window resizing
+            window.addEventListener('resize', () => {
+                const width = canvas.parentElement.clientWidth;
+                const height = canvas.parentElement.clientHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            });
+        }
+
+        /* ===== GSAP SCROLL ANIMATIONS ===== */
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Staggered fade up for sections
+            gsap.utils.toArray('.section').forEach(section => {
+                const elements = section.querySelectorAll(
+                    '.section-label, .section-title, .section-description, .glass-card, .usage-step, .arch-step'
+                );
+
+                gsap.set(elements, { y: 50, opacity: 0 });
+
+                ScrollTrigger.create({
+                    trigger: section,
+                    start: 'top 85%',
+                    once: true,
+                    onEnter: () => {
+                        gsap.to(elements, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.8,
+                            stagger: 0.12,
+                            ease: 'power3.out'
+                        });
+                    }
+                });
+            });
+
+            // Hero animations on load
+            const heroElements = document.querySelectorAll('.hero-content > *');
+            gsap.set(heroElements, { y: 30, opacity: 0 });
+            gsap.to(heroElements, {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                stagger: 0.18,
+                ease: 'power3.out',
+                delay: 0.2
+            });
+        }
+
+        /* ===== COPY TO CLIPBOARD ===== */
+        function copyCode(btn) {
+            const codeBlock = btn.parentElement.querySelector('code');
+            navigator.clipboard.writeText(codeBlock.textContent.trim()).then(() => {
+                btn.textContent = 'Copied!';
+                btn.style.background = 'rgba(0, 210, 255, 0.25)';
+                btn.style.borderColor = 'rgba(0, 210, 255, 0.4)';
+                btn.style.color = '#fff';
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.style.background = 'rgba(255, 255, 255, 0.08)';
+                    btn.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                    btn.style.color = 'var(--text-secondary)';
+                }, 2000);
+            });
+        }
+
+        /* ===== NAVIGATION SCROLL STYLING ===== */
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 40) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        /* ===== INITIALIZE ===== */
+        document.addEventListener('DOMContentLoaded', () => {
+            initHeroScene();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>
