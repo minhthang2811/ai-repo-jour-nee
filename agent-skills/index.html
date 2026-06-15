@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>agent-skills — Interactive Explainer</title>
+    <meta name="description" content="An interactive visual explainer for addyosmani/agent-skills: Production-grade engineering skills for AI coding agents.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #16213e;
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-cyan: #00d2ff;
+            --accent-pink: #f093fb;
+
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --text-muted: #5a6178;
+
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover-bg: rgba(255, 255, 255, 0.06);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.15);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* ===== GLASSMORPHISM CARDS ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.2);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+            margin-top: 1rem;
+        }
+
+        .code-block .comment { color: #5a6178; }
+        .code-block .keyword { color: #c792ea; }
+        .code-block .string { color: #c3e88d; }
+        .code-block .function { color: #82aaff; }
+        .code-block .number { color: #f78c6c; }
+        .code-block .command { color: var(--accent-cyan); }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        /* ===== SECTION TITLE PATTERN ===== */
+        .section-label {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin-bottom: 3rem;
+        }
+
+        /* ===== STATS BADGES ===== */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-badge .stat-icon {
+            font-size: 1rem;
+        }
+
+        .stat-badge .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo-icon {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-github {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-github:hover {
+            opacity: 1;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 850px;
+            padding: 0 2rem;
+            margin-top: 2rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 0.4rem 1.2rem;
+            border-radius: 999px;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-description {
+            font-size: clamp(1rem, 1.5vw, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .hero-cta svg {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(4px); }
+            60% { transform: translateY(2px); }
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .problem-card {
+            text-align: left;
+        }
+
+        .problem-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .problem-card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .solution-card {
+            text-align: center;
+            padding: 3rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            margin-top: 3rem;
+        }
+
+        .solution-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ===== ARCHITECTURE PIPELINE ===== */
+        .arch-pipeline {
+            position: relative;
+            max-width: 900px;
+            margin: 4rem auto 0;
+            padding: 0 2rem;
+        }
+
+        /* Central animated spine */
+        .arch-pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg,
+                rgba(102, 126, 234, 0),
+                rgba(102, 126, 234, 0.6) 10%,
+                rgba(118, 75, 162, 0.6) 50%,
+                rgba(0, 210, 255, 0.6) 90%,
+                rgba(0, 210, 255, 0)
+            );
+            border-radius: 2px;
+        }
+
+        /* Flowing particle dot on the spine */
+        .arch-pipeline::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 7px;
+            height: 7px;
+            transform: translateX(-50%);
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-cyan), 0 0 24px rgba(0, 210, 255, 0.4);
+            animation: flowDown 6s ease-in-out infinite;
+        }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Each step row */
+        .arch-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 3.5rem;
+        }
+
+        .arch-step:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Alternate layout */
+        .arch-step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .arch-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        /* The node circle on the spine */
+        .arch-step-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            z-index: 2;
+            border: 2px solid;
+            transition: var(--transition);
+        }
+
+        .arch-step-node::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0.3;
+            animation: nodePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Apply unique colors per step using nth-child */
+        .arch-step:nth-child(1) .arch-step-node { background: rgba(102, 126, 234, 0.15); border-color: #667eea; }
+        .arch-step:nth-child(1) .arch-step-node::before { border-color: #667eea; }
+        .arch-step:nth-child(2) .arch-step-node { background: rgba(118, 75, 162, 0.15); border-color: #764ba2; }
+        .arch-step:nth-child(2) .arch-step-node::before { border-color: #764ba2; }
+        .arch-step:nth-child(3) .arch-step-node { background: rgba(0, 210, 255, 0.15); border-color: #00d2ff; }
+        .arch-step:nth-child(3) .arch-step-node::before { border-color: #00d2ff; }
+        .arch-step:nth-child(4) .arch-step-node { background: rgba(240, 147, 251, 0.15); border-color: #f093fb; }
+        .arch-step:nth-child(4) .arch-step-node::before { border-color: #f093fb; }
+        .arch-step:nth-child(5) .arch-step-node { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+        .arch-step:nth-child(5) .arch-step-node::before { border-color: #ffd700; }
+        .arch-step:nth-child(6) .arch-step-node { background: rgba(0, 230, 118, 0.15); border-color: #00e676; }
+        .arch-step:nth-child(6) .arch-step-node::before { border-color: #00e676; }
+        .arch-step:nth-child(7) .arch-step-node { background: rgba(255, 107, 107, 0.15); border-color: #ff6b6b; }
+        .arch-step:nth-child(7) .arch-step-node::before { border-color: #ff6b6b; }
+        .arch-step:nth-child(8) .arch-step-node { background: rgba(255, 152, 0, 0.15); border-color: #ff9800; }
+        .arch-step:nth-child(8) .arch-step-node::before { border-color: #ff9800; }
+
+        /* Connector line from node to card */
+        .arch-step-connector {
+            flex: 0 0 60px;
+            height: 2px;
+            position: relative;
+        }
+
+        .arch-step-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        .arch-step:nth-child(even) .arch-step-connector::before {
+            background: linear-gradient(270deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        /* The card */
+        .arch-step-card {
+            flex: 1;
+            max-width: calc(50% - 84px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .arch-step-card:hover {
+            background: var(--glass-hover-bg);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        /* Card hover borders/glows matching steps */
+        .arch-step:nth-child(1) .arch-step-card:hover { border-color: rgba(102, 126, 234, 0.5); box-shadow: 0 0 30px rgba(102, 126, 234, 0.15); }
+        .arch-step:nth-child(2) .arch-step-card:hover { border-color: rgba(118, 75, 162, 0.5); box-shadow: 0 0 30px rgba(118, 75, 162, 0.15); }
+        .arch-step:nth-child(3) .arch-step-card:hover { border-color: rgba(0, 210, 255, 0.5); box-shadow: 0 0 30px rgba(0, 210, 255, 0.15); }
+        .arch-step:nth-child(4) .arch-step-card:hover { border-color: rgba(240, 147, 251, 0.5); box-shadow: 0 0 30px rgba(240, 147, 251, 0.15); }
+        .arch-step:nth-child(5) .arch-step-card:hover { border-color: rgba(255, 215, 0, 0.5); box-shadow: 0 0 30px rgba(255, 215, 0, 0.15); }
+        .arch-step:nth-child(6) .arch-step-card:hover { border-color: rgba(0, 230, 118, 0.5); box-shadow: 0 0 30px rgba(0, 230, 118, 0.15); }
+        .arch-step:nth-child(7) .arch-step-card:hover { border-color: rgba(255, 107, 107, 0.5); box-shadow: 0 0 30px rgba(255, 107, 107, 0.15); }
+        .arch-step:nth-child(8) .arch-step-card:hover { border-color: rgba(255, 152, 0, 0.5); box-shadow: 0 0 30px rgba(255, 152, 0, 0.15); }
+
+        .arch-step-card .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .arch-step-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .arch-step-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Spacer to push cards to opposite sides */
+        .arch-step-spacer {
+            flex: 1;
+            max-width: calc(50% - 84px);
+        }
+
+        /* ===== USAGE SECTION ===== */
+        .usage-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            background: var(--glass-bg);
+            color: var(--accent-cyan);
+            border: 1px solid var(--glass-border);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .usage-step {
+            position: relative;
+            padding-left: 5rem;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 1.5rem;
+            top: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            opacity: 0.5;
+        }
+
+        .usage-step h3 {
+            font-size: 1.15rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .footer-line {
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-secondary), transparent);
+            margin: 0 auto 2rem;
+        }
+
+        .footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer a:hover {
+            color: var(--accent-cyan);
+            text-decoration: underline;
+        }
+
+        .footer-sub {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .nav-links a:not(.nav-github) {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-pipeline::before,
+            .arch-pipeline::after {
+                left: 24px;
+            }
+
+            .arch-step {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 60px;
+            }
+
+            .arch-step-node {
+                left: 24px;
+                top: 0;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 40px;
+                font-size: 0.75rem;
+            }
+
+            .arch-step-connector {
+                display: none;
+            }
+
+            .arch-step-card {
+                max-width: 100%;
+            }
+
+            .arch-step-spacer {
+                display: none;
+            }
+
+            .usage-step {
+                padding-left: 1.5rem;
+                padding-top: 3.5rem;
+            }
+
+            .step-number {
+                left: 1.5rem;
+                top: 1.5rem;
+            }
+
+            section {
+                padding: 5rem 0;
+            }
+
+            .tabs-header {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .hero-title {
+                font-size: 1.8rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">
+                <span class="nav-logo-icon">⚡</span> agent-skills
+            </a>
+            <div class="nav-links">
+                <a href="#problem">Problem</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#usage">Usage</a>
+                <a href="https://github.com/addyosmani/agent-skills" target="_blank" rel="noopener" class="nav-github" aria-label="GitHub Repository">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge">Open Source · Shell & Prompt Engineering</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">Production-Grade Agent Skills</span>
+            </h1>
+            <p class="hero-description">Codify workflows, quality gates, and senior engineering disciplines directly into AI coding agents to ensure high-quality software development.</p>
+            <div class="stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">59,776</span>
+                    <span>Stars</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🍴</span>
+                    <span class="stat-value">6,477</span>
+                    <span>Forks</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💻</span>
+                    <span class="stat-value">Shell & Markdown</span>
+                </div>
+            </div>
+            <a href="#problem" class="hero-cta">
+                Explore
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section" id="problem">
+        <div class="container">
+            <span class="section-label">The Problem</span>
+            <h2 class="section-title">
+                <span class="gradient-text">AI Agents coding without discipline</span>
+            </h2>
+            <div class="problem-grid">
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">😤</div>
+                    <h3>Agentic Drift</h3>
+                    <p>AI assistants often jump straight to modifying codebase files before fully mapping out design constraints, leading to unstable systems and code regressions.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🔧</div>
+                    <h3>Impulsive Edits</h3>
+                    <p>Without standard protocols, agents might write overly complex structures, introduce silent security issues, or skip refactoring tasks to complete jobs quickly.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Verification Gaps</h3>
+                    <p>Coding tools often skip test writing and automated checks. When bugs occur, developers must spend critical time debugging agent output manually.</p>
+                </div>
+            </div>
+            <div class="glass-card solution-card">
+                <h3 class="gradient-text">agent-skills solves this.</h3>
+                <p>By mapping senior developer workflows directly to structured slash commands, specialist agent personas, and 24 detailed markdown skills, it creates strict quality gates and operating boundaries that AI agents follow autonomously.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <span class="section-label">Architecture</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How It Works</span>
+            </h2>
+            <p class="section-description">
+                The agent-skills system orchestrates the agentic software development lifecycle through a multi-phase pipeline of commands and specialist guidelines.
+            </p>
+        </div>
+
+        <div class="arch-pipeline">
+            <!-- Step 1 (odd = card on left, spacer on right) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">📝</div>
+                    <h3>01: Define & Spec (`/spec`)</h3>
+                    <p>Establishes the boundaries and design constraints by creating a detailed Product Requirements Document (PRD) before any changes are committed.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">01</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 2 (even = spacer on left, card on right) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">02</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">💬</div>
+                    <h3>02: Interview & Clarify</h3>
+                    <p>Uses the `interview-me` skill to conduct a single-question-at-a-time interview, extracting clear requirements when plans are underspecified.</p>
+                </div>
+            </div>
+
+            <!-- Step 3 (odd) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">📋</div>
+                    <h3>03: Plan Breakdown (`/plan`)</h3>
+                    <p>Generates a detailed implementation plan and atomic `task.md` checklist to break down massive architectural changes into manageable tasks.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">03</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 4 (even) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">04</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>04: Build & Code (`/build`)</h3>
+                    <p>Executes tasks incrementally. `/build auto` runs plans autonomously, pausing on risky steps and committing changes only when verified.</p>
+                </div>
+            </div>
+
+            <!-- Step 5 (odd) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🧪</div>
+                    <h3>05: Test & Prove (`/test`)</h3>
+                    <p>Drives the Test-Driven Development (TDD) cycle. Enforces that tests are written and passed to guarantee that changes function correctly.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">05</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 6 (even) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">06</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🔍</div>
+                    <h3>06: Review & Audit (`/review`)</h3>
+                    <p>Orchestrates specialist personas (code-reviewer, security-auditor, test-engineer, performance) to audit and refine the codebase before merging.</p>
+                </div>
+            </div>
+
+            <!-- Step 7 (odd) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">✂️</div>
+                    <h3>07: Code Simplify (`/code-simplify`)</h3>
+                    <p>Enforces the `code-simplification` skill to remove unnecessary abstractions, delete dead code, and choose clarity over cleverness.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">07</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 8 (even) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">08</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🚀</div>
+                    <h3>08: Ship & Deploy (`/ship`)</h3>
+                    <p>Aggregates findings, updates metadata versioning files, runs pre-flight scripts, and merges changes safely into production branches.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section class="section" id="usage">
+        <div class="container">
+            <span class="section-label">Get Started</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How to Use</span>
+            </h2>
+
+            <div class="usage-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" onclick="switchTab(event, 'claude-code')">Claude Code</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'antigravity')">Antigravity CLI</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'cursor-setup')">Cursor Rules</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'gemini-cli')">Gemini CLI</button>
+                </div>
+
+                <!-- Claude Code Pane -->
+                <div id="claude-code" class="tab-pane active">
+                    <div class="usage-steps">
+                        <div class="usage-step glass-card">
+                            <div class="step-number">01</div>
+                            <h3>Install from Marketplace</h3>
+                            <p>Add the plugin using the Claude Code shell interface:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code><span class="command">/plugin</span> marketplace add addyosmani/agent-skills
+<span class="command">/plugin</span> install agent-skills@addy-agent-skills</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="usage-step glass-card">
+                            <div class="step-number">02</div>
+                            <h3>Configure / Local Build</h3>
+                            <p>Or clone the repository locally and load the plugin manually:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code>git clone https://github.com/addyosmani/agent-skills.git
+claude --plugin-dir /path/to/agent-skills</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="usage-step glass-card">
+                            <div class="step-number">03</div>
+                            <h3>Activate Commands</h3>
+                            <p>Call lifecycle commands directly within your Claude Code workspace session:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code><span class="command">/spec</span>  <span class="comment"># Design the specification</span>
+<span class="command">/plan</span>  <span class="comment"># Create task checklist</span>
+<span class="command">/build</span> <span class="comment"># Implement codebase changes</span></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Antigravity CLI Pane -->
+                <div id="antigravity" class="tab-pane">
+                    <div class="usage-steps">
+                        <div class="usage-step glass-card">
+                            <div class="step-number">01</div>
+                            <h3>Install Plugin</h3>
+                            <p>Install the skills pack directly using the Antigravity command line:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code>agy plugin install https://github.com/addyosmani/agent-skills.git</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="usage-step glass-card">
+                            <div class="step-number">02</div>
+                            <h3>Run Checks</h3>
+                            <p>Invoke skills and lifecycle hooks for active code management:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code>agy run build-auto
+agy run simplify --all</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cursor Setup Pane -->
+                <div id="cursor-setup" class="tab-pane">
+                    <div class="usage-steps">
+                        <div class="usage-step glass-card">
+                            <div class="step-number">01</div>
+                            <h3>Copy Rules</h3>
+                            <p>Copy any desired skill definitions from the `skills/` directory into your project's Cursor directory:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code>mkdir -p .cursor/rules
+cp path-to-skills/skills/spec-driven-development/SKILL.md .cursor/rules/spec-driven-development.mdc</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="usage-step glass-card">
+                            <div class="step-number">02</div>
+                            <h3>Interactive Prompting</h3>
+                            <p>The rules trigger automatically in Cursor Chat and Composer when related files or design prompts are targeted.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gemini CLI Pane -->
+                <div id="gemini-cli" class="tab-pane">
+                    <div class="usage-steps">
+                        <div class="usage-step glass-card">
+                            <div class="step-number">01</div>
+                            <h3>Install Skills</h3>
+                            <p>Install the skills pack using the Gemini Command Line Interface:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code>gemini skills install https://github.com/addyosmani/agent-skills.git --path skills</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="usage-step glass-card">
+                            <div class="step-number">02</div>
+                            <h3>Verify Setup</h3>
+                            <p>Verify that the native skills are loaded and ready for auto-discovery:</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                <pre><code>gemini skills list</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-line"></div>
+        <div class="container">
+            <p>
+                Built from
+                <a href="https://github.com/addyosmani/agent-skills" target="_blank" rel="noopener">addyosmani/agent-skills</a>
+            </p>
+            <p class="footer-sub">Generated with ❤️ · 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Tab Switcher
+        function switchTab(event, tabId) {
+            const container = event.target.closest('.usage-container');
+            
+            // Deactivate all buttons
+            container.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Deactivate all panes
+            container.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Activate selected button and pane
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Copy to Clipboard
+        function copyCode(btn) {
+            const codeBlock = btn.parentElement.querySelector('code');
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // ===== HERO PARTICLE BACKGROUND =====
+        function initHeroScene() {
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Particles
+            const particleCount = 800;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            const spread = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0x667eea,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 25;
+
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    pos[i * 3] += velocities[i].x;
+                    pos[i * 3 + 1] += velocities[i].y;
+                    pos[i * 3 + 2] += velocities[i].z;
+
+                    // Wrap around
+                    for (let j = 0; j < 3; j++) {
+                        if (pos[i * 3 + j] > spread / 2) pos[i * 3 + j] = -spread / 2;
+                        if (pos[i * 3 + j] < -spread / 2) pos[i * 3 + j] = spread / 2;
+                    }
+                }
+                geometry.attributes.position.needsUpdate = true;
+
+                // Subtle camera follow mouse
+                camera.position.x += (mouseX * 2 - camera.position.x) * 0.02;
+                camera.position.y += (mouseY * 2 - camera.position.y) * 0.02;
+                camera.lookAt(scene.position);
+
+                particles.rotation.y += 0.0005;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            });
+        }
+
+        // ===== SCROLL ANIMATIONS =====
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Hero content entrance
+            const heroElements = document.querySelectorAll('.hero-content > *');
+            gsap.set(heroElements, { y: 40, opacity: 0 });
+            gsap.to(heroElements, {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                stagger: 0.2,
+                ease: 'power3.out',
+                delay: 0.3
+            });
+
+            // Fade-up animation for each section's elements
+            gsap.utils.toArray('section:not(.hero)').forEach(section => {
+                const elements = section.querySelectorAll(
+                    '.section-label, .section-title, .section-description, .glass-card, .usage-step, .arch-step'
+                );
+
+                // Set initial hidden state
+                gsap.set(elements, { y: 60, opacity: 0 });
+
+                // Reveal when section scrolls into view
+                ScrollTrigger.create({
+                    trigger: section,
+                    start: 'top 85%',
+                    once: true,
+                    onEnter: () => {
+                        gsap.to(elements, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.8,
+                            stagger: 0.12,
+                            ease: 'power3.out'
+                        });
+                    }
+                });
+            });
+        }
+
+        // ===== INIT EVERYTHING =====
+        document.addEventListener('DOMContentLoaded', () => {
+            initHeroScene();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>
