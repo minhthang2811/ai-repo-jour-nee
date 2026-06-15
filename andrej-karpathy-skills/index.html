@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karpathy Guidelines — LLM Coding Guardrails</title>
+    <meta name="description" content="An interactive visual explainer for multica-ai/andrej-karpathy-skills: Reusable guidelines and Cursor rules to prevent LLM coding pitfalls.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #06060c;
+            color: #e2e8f0;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --bg-primary: #06060c;
+            --bg-secondary: #0d0e1b;
+            --bg-tertiary: #111224;
+
+            --accent-primary: #6366f1;
+            --accent-secondary: #a855f7;
+            --accent-cyan: #06b6d4;
+            --accent-pink: #ec4899;
+
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-hover-bg: rgba(255, 255, 255, 0.05);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.15);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* ===== GLASSMORPHISM CARDS ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(99, 102, 241, 0.25);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+            margin-top: 1rem;
+        }
+
+        .code-block .comment { color: #64748b; }
+        .code-block .keyword { color: #f472b6; }
+        .code-block .string { color: #34d399; }
+        .code-block .function { color: #60a5fa; }
+        .code-block .number { color: #fb923c; }
+        .code-block .command { color: var(--accent-cyan); }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: var(--text-primary);
+        }
+
+        /* ===== SECTION TITLE PATTERN ===== */
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin-bottom: 3rem;
+        }
+
+        /* ===== STATS BADGES ===== */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .stat-badge .stat-icon {
+            font-size: 1rem;
+        }
+
+        .stat-badge .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.2rem 0;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(6, 6, 12, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0.9rem 0;
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo span {
+            color: var(--accent-cyan);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-github {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-github:hover {
+            opacity: 1;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 850px;
+            padding: 0 2rem;
+            margin-top: 4rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            background: rgba(6, 182, 212, 0.05);
+            padding: 0.4rem 1.2rem;
+            border-radius: 999px;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-description {
+            font-size: clamp(1rem, 1.5vw, 1.25rem);
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 2.2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .hero-cta svg {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(4px); }
+            60% { transform: translateY(2px); }
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .problem-card {
+            text-align: left;
+            padding: 2.2rem;
+        }
+
+        .problem-icon {
+            font-size: 2rem;
+            margin-bottom: 1.2rem;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.04);
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            line-height: 50px;
+            border-radius: 50%;
+        }
+
+        .problem-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .solution-card {
+            text-align: center;
+            padding: 3.5rem 2rem;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(6, 182, 212, 0.03));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solution-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .solution-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* ===== ARCHITECTURE PIPELINE ===== */
+        .arch-pipeline {
+            position: relative;
+            max-width: 900px;
+            margin: 4rem auto 0;
+            padding: 0 2rem;
+        }
+
+        /* Central animated spine */
+        .arch-pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg,
+                rgba(99, 102, 241, 0),
+                rgba(99, 102, 241, 0.6) 10%,
+                rgba(168, 85, 247, 0.6) 50%,
+                rgba(6, 182, 212, 0.6) 90%,
+                rgba(6, 182, 212, 0)
+            );
+            border-radius: 2px;
+        }
+
+        /* Flowing particle dot on the spine */
+        .arch-pipeline::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 7px;
+            height: 7px;
+            transform: translateX(-50%);
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-cyan), 0 0 24px rgba(6, 182, 212, 0.4);
+            animation: flowDown 5s ease-in-out infinite;
+        }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Each step row */
+        .arch-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 4rem;
+        }
+
+        .arch-step:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Alternate layout */
+        .arch-step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .arch-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        /* The node circle on the spine */
+        .arch-step-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            z-index: 2;
+            border: 2px solid;
+            transition: var(--transition);
+        }
+
+        .arch-step-node::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0.3;
+            animation: nodePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Unique node styles */
+        .arch-step:nth-child(1) .arch-step-node { background: rgba(99, 102, 241, 0.15); border-color: var(--accent-primary); }
+        .arch-step:nth-child(1) .arch-step-node::before { border-color: var(--accent-primary); }
+        .arch-step:nth-child(2) .arch-step-node { background: rgba(6, 182, 212, 0.15); border-color: var(--accent-cyan); }
+        .arch-step:nth-child(2) .arch-step-node::before { border-color: var(--accent-cyan); }
+        .arch-step:nth-child(3) .arch-step-node { background: rgba(168, 85, 247, 0.15); border-color: var(--accent-secondary); }
+        .arch-step:nth-child(3) .arch-step-node::before { border-color: var(--accent-secondary); }
+        .arch-step:nth-child(4) .arch-step-node { background: rgba(236, 72, 153, 0.15); border-color: var(--accent-pink); }
+        .arch-step:nth-child(4) .arch-step-node::before { border-color: var(--accent-pink); }
+
+        /* Connector line from node to card */
+        .arch-step-connector {
+            flex: 0 0 60px;
+            height: 2px;
+            position: relative;
+        }
+
+        .arch-step-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.4), rgba(6, 182, 212, 0.4));
+        }
+
+        .arch-step:nth-child(even) .arch-step-connector::before {
+            background: linear-gradient(270deg, rgba(99, 102, 241, 0.4), rgba(6, 182, 212, 0.4));
+        }
+
+        /* The card */
+        .arch-step-card {
+            flex: 1;
+            max-width: calc(50% - 84px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .arch-step-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.12), 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(-4px) scale(1.01);
+        }
+
+        /* Apply hover glows matching nodes */
+        .arch-step:nth-child(1) .arch-step-card:hover { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 30px rgba(99, 102, 241, 0.15); }
+        .arch-step:nth-child(2) .arch-step-card:hover { border-color: rgba(6, 182, 212, 0.4); box-shadow: 0 0 30px rgba(6, 182, 212, 0.15); }
+        .arch-step:nth-child(3) .arch-step-card:hover { border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 0 30px rgba(168, 85, 247, 0.15); }
+        .arch-step:nth-child(4) .arch-step-card:hover { border-color: rgba(236, 72, 153, 0.4); box-shadow: 0 0 30px rgba(236, 72, 153, 0.15); }
+
+        .arch-step-card .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+            display: inline-block;
+        }
+
+        .arch-step-card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .arch-step-card p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Spacer to push cards to opposite sides */
+        .arch-step-spacer {
+            flex: 1;
+            max-width: calc(50% - 84px);
+        }
+
+        /* ===== USAGE SECTION ===== */
+        .usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .usage-step {
+            position: relative;
+            padding-left: 5.5rem;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 1.8rem;
+            top: 1.8rem;
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            opacity: 0.55;
+        }
+
+        .usage-step h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .usage-step p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0.4rem 0.8rem;
+            transition: var(--transition);
+            border-radius: var(--radius-sm);
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 4rem 0;
+            text-align: center;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .footer-line {
+            width: 250px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-cyan), transparent);
+            margin: 0 auto 2rem;
+        }
+
+        .footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .footer a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        .footer-sub {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.8rem;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .nav-links a:not(.nav-github) {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .stats {
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-pipeline::before,
+            .arch-pipeline::after {
+                left: 24px;
+            }
+
+            .arch-step {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 60px;
+                margin-bottom: 2.5rem;
+            }
+
+            .arch-step-node {
+                left: 24px;
+                top: 0;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 40px;
+                font-size: 0.75rem;
+            }
+
+            .arch-step-connector {
+                display: none;
+            }
+
+            .arch-step-card {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .arch-step-spacer {
+                display: none;
+            }
+
+            .usage-step {
+                padding-left: 1.5rem;
+                padding-top: 3.8rem;
+            }
+
+            .step-number {
+                left: 1.5rem;
+                top: 1.5rem;
+            }
+
+            section {
+                padding: 5rem 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1.25rem;
+            }
+
+            .hero-title {
+                font-size: 1.85rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stat-badge {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">
+                Karpathy<span>Guard</span>
+            </a>
+            <div class="nav-links">
+                <a href="#problem">The Problems</a>
+                <a href="#principles">The Principles</a>
+                <a href="#usage">Installation</a>
+                <a href="https://github.com/multica-ai/andrej-karpathy-skills" target="_blank" rel="noopener" class="nav-github" aria-label="GitHub Repository">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge">Claude Code & Cursor Rules</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">LLM Coding Guardrails</span>
+            </h1>
+            <p class="hero-description">
+                A single file configuration derived from Andrej Karpathy's observations to keep LLM coding agents focused, simple, surgical, and test-driven.
+            </p>
+            <div class="stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">175,654</span>
+                    <span>Stars</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🍴</span>
+                    <span class="stat-value">17,925</span>
+                    <span>Forks</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💻</span>
+                    <span class="stat-value">MDC & Markdown</span>
+                </div>
+            </div>
+            <div style="margin-top: 2.5rem;">
+                <a href="#problem" class="hero-cta">
+                    See the Problems
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section" id="problem">
+        <div class="container">
+            <span class="section-label">The Challenges</span>
+            <h2 class="section-title">
+                <span class="gradient-text">Why LLM Agents Fail at Coding</span>
+            </h2>
+            <p class="section-description">
+                LLMs can write impressive blocks of code, but without structured constraints they fall victim to four recurring pitfalls that slow down development.
+            </p>
+            <div class="problem-grid">
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">😤</div>
+                    <h3>Wrong Assumptions</h3>
+                    <p>Models silently choose an interpretation of an ambiguous prompt and run with it, hiding confusion rather than asking clarification questions or presenting trade-offs.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🔧</div>
+                    <h3>Speculative Bloat</h3>
+                    <p>A tendency to overcomplicate APIs, design overly abstract classes, and write 1,000 lines of "future-proof" boilerplate when 100 lines of simple logic would suffice.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Collateral Damage</h3>
+                    <p>Unintentional side-effects where LLMs rewrite, reformat, or delete adjacent code, docstrings, and comments that they didn't fully comprehend.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🧪</div>
+                    <h3>Silent Failures</h3>
+                    <p>Finishing a requested feature and declaring it complete without executing the test suite, verifying types, or ensuring a build actually compiles.</p>
+                </div>
+            </div>
+            <div class="glass-card solution-card">
+                <h3>Karpathy Guidelines Solve This.</h3>
+                <p>By defining explicit constraints, these guidelines force the AI agent to verify assumptions, prioritize absolute simplicity, limit file edits surgically, and prove correctness before finishing.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="principles">
+        <div class="container">
+            <span class="section-label">Four Pillars</span>
+            <h2 class="section-title">
+                <span class="gradient-text">The Core Principles</span>
+            </h2>
+            <p class="section-description">
+                Four rules structured to guide LLMs to think clearly, keep code compact, minimize edits, and verify everything.
+            </p>
+        </div>
+
+        <div class="arch-pipeline">
+            <!-- Principle 1 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Think Before Coding</h3>
+                    <p>State assumptions explicitly before writing code. If multiple interpretations exist, present them rather than deciding silently. Push back on overengineered requests and stop to clarify any ambiguities immediately.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">01</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Principle 2 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">02</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Simplicity First</h3>
+                    <p>Implement the absolute minimum code necessary to solve the problem. No speculative features, Single-use code must not be wrapped in abstract helper modules. If a 200-line solution can be written in 50 lines, rewrite it.</p>
+                </div>
+            </div>
+
+            <!-- Principle 3 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Surgical Changes</h3>
+                    <p>Only touch files and code blocks that are essential to the task. Avoid "cleaning up" adjacent logic, comments, or formatting. Maintain styling consistency exactly, even if you disagree with the local architecture.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">03</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Principle 4 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">04</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🤖</div>
+                    <h3>Goal-Driven Success</h3>
+                    <p>Anchor agent success to tests first. Always write tests or describe exact verifiable success criteria. Verify compilation, run typecheck commands, and run relevant test suites to ensure zero regressions before completing a task.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section class="section" id="usage">
+        <div class="container">
+            <span class="section-label">Quickstart</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How to Integrate</span>
+            </h2>
+            <p class="section-description">
+                You can apply these rules directly to Claude Code, Cursor, or Agentic MCP-compatible setups.
+            </p>
+
+            <div class="usage-steps">
+                <!-- Step 1: Claude Code -->
+                <div class="usage-step glass-card">
+                    <div class="step-number">01</div>
+                    <h3>Claude Code (CLAUDE.md)</h3>
+                    <p>Place a <code>CLAUDE.md</code> file in the root of your project directory. Claude Code will automatically detect and consume it as system instructions.</p>
+                    
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab(this, 'claude-content')">CLAUDE.md Content</button>
+                    </div>
+
+                    <div id="claude-content" class="tab-content active">
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code><span class="comment"># CLAUDE.md - Behavioral guidelines to reduce LLM mistakes</span>
+<span class="keyword">## 1. Think Before Coding</span>
+- State assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop and ask.
+
+<span class="keyword">## 2. Simplicity First</span>
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No speculative flexibility or configurability.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+<span class="keyword">## 3. Surgical Changes</span>
+- Touch only what you must. Clean up only your own mess.
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style perfectly.
+
+<span class="keyword">## 4. Goal-Driven Execution</span>
+- Define success criteria upfront. Write tests first where possible.
+- Run tests and lint checks to verify success.
+- Do not stop until all criteria are met and verified.</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Cursor Project Rules -->
+                <div class="usage-step glass-card">
+                    <div class="step-number">02</div>
+                    <h3>Cursor Rules (.mdc)</h3>
+                    <p>Add <code>karpathy-guidelines.mdc</code> to your project's <code>.cursor/rules/</code> directory to apply them automatically to Chat and Composer.</p>
+                    
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab(this, 'cursor-content')">MDC Content</button>
+                    </div>
+
+                    <div id="cursor-content" class="tab-content active">
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code>---
+description: Behavioral guidelines derived from Karpathy's LLM coding observations
+globs: *
+alwaysApply: true
+---
+<span class="comment"># Karpathy Guidelines</span>
+
+Apply the following 4 behaviors strictly:
+1. **Think Before Coding**: Ask questions for ambiguities, state assumptions first.
+2. **Simplicity First**: Write minimal code. No speculative abstractions.
+3. **Surgical Changes**: Only edit lines critical to the task. Maintain matching style.
+4. **Goal-Driven Execution**: Run compilation checks and tests to verify success.</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Agentic Skill (Multica/MCP) -->
+                <div class="usage-step glass-card">
+                    <div class="step-number">03</div>
+                    <h3>Agentic Reusable Skill</h3>
+                    <p>Integrate guidelines directly as a reusable skill folder in agent frameworks like Multica.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="comment"># Skill layout</span>
+.agents/
+  skills/
+    karpathy-guidelines/
+      SKILL.md  <span class="comment"># Markdown instructions defining guidelines</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-line"></div>
+        <div class="container">
+            <p>
+                Built from 
+                <a href="https://github.com/multica-ai/andrej-karpathy-skills" target="_blank" rel="noopener">multica-ai/andrej-karpathy-skills</a>
+            </p>
+            <p class="footer-sub">Generated with ❤️ · 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Copy to clipboard
+        function copyCode(btn) {
+            const codeBlock = btn.parentElement.querySelector('code');
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // Tab Switcher
+        function switchTab(btn, contentId) {
+            const parent = btn.closest('.usage-step');
+            
+            // Remove active class from all buttons in this step
+            parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            // Hide all tab contents in this step
+            parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class
+            btn.classList.add('active');
+            parent.querySelector('#' + contentId).classList.add('active');
+        }
+
+        // ===== HERO PARTICLE BACKGROUND =====
+        function initHeroScene() {
+            const canvas = document.getElementById('hero-canvas');
+            const parent = canvas.parentElement;
+            
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, parent.clientWidth / parent.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(parent.clientWidth, parent.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Particles
+            const particleCount = 450;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            const spread = 40;
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.015,
+                    y: (Math.random() - 0.5) * 0.015,
+                    z: (Math.random() - 0.5) * 0.015
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0x6366f1,
+                size: 0.12,
+                transparent: true,
+                opacity: 0.65,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 18;
+
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    pos[i * 3] += velocities[i].x;
+                    pos[i * 3 + 1] += velocities[i].y;
+                    pos[i * 3 + 2] += velocities[i].z;
+
+                    // Wrap around
+                    for (let j = 0; j < 3; j++) {
+                        if (pos[i * 3 + j] > spread / 2) pos[i * 3 + j] = -spread / 2;
+                        if (pos[i * 3 + j] < -spread / 2) pos[i * 3 + j] = spread / 2;
+                    }
+                }
+                geometry.attributes.position.needsUpdate = true;
+
+                // Camera follow mouse parallax
+                camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.03;
+                camera.position.y += (mouseY * 1.5 - camera.position.y) * 0.03;
+                camera.lookAt(scene.position);
+
+                particles.rotation.y += 0.0004;
+                particles.rotation.x += 0.0002;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = parent.clientWidth / parent.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(parent.clientWidth, parent.clientHeight);
+            });
+        }
+
+        // ===== SCROLL ANIMATIONS =====
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Staggered fade up for sections
+            gsap.utils.toArray('section').forEach(section => {
+                const elements = section.querySelectorAll(
+                    '.section-label, .section-title, .section-description, .glass-card, .arch-step'
+                );
+
+                if (elements.length > 0) {
+                    gsap.set(elements, { y: 40, opacity: 0 });
+
+                    ScrollTrigger.create({
+                        trigger: section,
+                        start: 'top 85%',
+                        once: true,
+                        onEnter: () => {
+                            gsap.to(elements, {
+                                y: 0,
+                                opacity: 1,
+                                duration: 0.8,
+                                stagger: 0.12,
+                                ease: 'power2.out'
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Hero content reveal
+            const heroElements = document.querySelectorAll('.hero-content > *');
+            gsap.set(heroElements, { y: 30, opacity: 0 });
+            gsap.to(heroElements, {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                stagger: 0.15,
+                ease: 'power3.out',
+                delay: 0.2
+            });
+        }
+
+        // ===== INIT EVERYTHING =====
+        document.addEventListener('DOMContentLoaded', () => {
+            initHeroScene();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>
