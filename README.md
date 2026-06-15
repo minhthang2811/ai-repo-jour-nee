@@ -1,2 +1,3 @@
-# ai-repo-jour-nee
-Pack your bags! Join Nee on an expedition into the world’s most famous AI codebases. What they are, how they work, and why they matter
+# 🗺️ ai-repo-jour-nee
+
+"Where open-source AI meets human readability. Let's explore the codebases of the giants."
