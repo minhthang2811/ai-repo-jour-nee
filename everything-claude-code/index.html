@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECC — Interactive Explainer</title>
+    <meta name="description" content="An interactive visual explainer for ECC: The agent harness performance optimization system.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #16213e;
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-cyan: #00d2ff;
+            --accent-pink: #f093fb;
+
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --text-muted: #5a6178;
+
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover-bg: rgba(255, 255, 255, 0.06);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.15);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* ===== GLASSMORPHISM CARDS ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.2);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .code-block .comment { color: #5a6178; }
+        .code-block .keyword { color: #c792ea; }
+        .code-block .string { color: #c3e88d; }
+        .code-block .function { color: #82aaff; }
+        .code-block .number { color: #f78c6c; }
+        .code-block .command { color: var(--accent-cyan); }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        /* ===== SECTION TITLE PATTERN ===== */
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin-bottom: 3rem;
+        }
+
+        /* ===== STATS BADGES ===== */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-badge .stat-icon {
+            font-size: 1rem;
+        }
+
+        .stat-badge .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-github {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .nav-github:hover {
+            opacity: 1;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 0.4rem 1.2rem;
+            border-radius: 999px;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-description {
+            font-size: clamp(1rem, 1.5vw, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .hero-cta svg {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(4px); }
+            60% { transform: translateY(2px); }
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .problem-card {
+            text-align: center;
+        }
+
+        .problem-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .problem-card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .solution-card {
+            text-align: center;
+            padding: 3rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+
+        .solution-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ===== ARCHITECTURE PIPELINE ===== */
+        .arch-pipeline {
+            position: relative;
+            max-width: 900px;
+            margin: 4rem auto 0;
+            padding: 0 2rem;
+        }
+
+        /* Central animated spine */
+        .arch-pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg,
+                rgba(102, 126, 234, 0),
+                rgba(102, 126, 234, 0.6) 10%,
+                rgba(118, 75, 162, 0.6) 50%,
+                rgba(0, 210, 255, 0.6) 90%,
+                rgba(0, 210, 255, 0)
+            );
+            border-radius: 2px;
+        }
+
+        /* Flowing particle dot on the spine */
+        .arch-pipeline::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 7px;
+            height: 7px;
+            transform: translateX(-50%);
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-cyan), 0 0 24px rgba(0, 210, 255, 0.4);
+            animation: flowDown 4s ease-in-out infinite;
+        }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Each step row */
+        .arch-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .arch-step:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Alternate layout */
+        .arch-step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .arch-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        /* The node circle on the spine */
+        .arch-step-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            z-index: 2;
+            border: 2px solid;
+            transition: var(--transition);
+            background: var(--bg-primary);
+        }
+
+        .arch-step-node::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0.3;
+            animation: nodePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Apply unique colors per step using nth-child */
+        .arch-step:nth-child(1) .arch-step-node { background: rgba(102, 126, 234, 0.15); border-color: #667eea; }
+        .arch-step:nth-child(1) .arch-step-node::before { border-color: #667eea; }
+        .arch-step:nth-child(2) .arch-step-node { background: rgba(118, 75, 162, 0.15); border-color: #764ba2; }
+        .arch-step:nth-child(2) .arch-step-node::before { border-color: #764ba2; }
+        .arch-step:nth-child(3) .arch-step-node { background: rgba(0, 210, 255, 0.15); border-color: #00d2ff; }
+        .arch-step:nth-child(3) .arch-step-node::before { border-color: #00d2ff; }
+        .arch-step:nth-child(4) .arch-step-node { background: rgba(240, 147, 251, 0.15); border-color: #f093fb; }
+        .arch-step:nth-child(4) .arch-step-node::before { border-color: #f093fb; }
+        .arch-step:nth-child(5) .arch-step-node { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+        .arch-step:nth-child(5) .arch-step-node::before { border-color: #ffd700; }
+        .arch-step:nth-child(6) .arch-step-node { background: rgba(0, 230, 118, 0.15); border-color: #00e676; }
+        .arch-step:nth-child(6) .arch-step-node::before { border-color: #00e676; }
+
+        /* Connector line from node to card */
+        .arch-step-connector {
+            flex: 0 0 60px;
+            height: 2px;
+            position: relative;
+        }
+
+        .arch-step-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        .arch-step:nth-child(even) .arch-step-connector::before {
+            background: linear-gradient(270deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        /* The card */
+        .arch-step-card {
+            flex: 1;
+            max-width: calc(50% - 84px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .arch-step-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.25);
+            box-shadow: 0 0 40px rgba(102, 126, 234, 0.12), 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .arch-step-card .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .arch-step-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .arch-step-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Spacer to push cards to opposite sides */
+        .arch-step-spacer {
+            flex: 1;
+            max-width: calc(50% - 84px);
+        }
+
+        /* Mobile responsiveness for pipeline */
+        @media (max-width: 768px) {
+            .arch-pipeline::before {
+                left: 24px;
+            }
+            .arch-pipeline::after {
+                left: 24px;
+            }
+            .arch-step {
+                flex-direction: row !important;
+                margin-bottom: 2rem;
+            }
+            .arch-step-node {
+                left: 24px;
+            }
+            .arch-step-connector {
+                flex: 0 0 30px;
+                margin-left: 48px;
+            }
+            .arch-step-spacer {
+                display: none;
+            }
+            .arch-step-card {
+                max-width: calc(100% - 78px);
+            }
+        }
+
+        /* ===== USAGE STEPS ===== */
+        .usage-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .usage-step {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .usage-step-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .usage-step-num {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.2);
+            color: var(--accent-primary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 3rem 0;
+            border-top: 1px solid var(--glass-border);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">ECC</a>
+            <div class="nav-links">
+                <a href="#problem">Problem</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#usage">Usage</a>
+                <a href="https://github.com/affaan-m/ECC" target="_blank" rel="noopener" class="nav-github">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge">Open Source · TypeScript/Python</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">ECC</span>
+            </h1>
+            <p class="hero-description">The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.</p>
+            <div class="stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">211.9K+</span>
+                    <span>Stars</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🍴</span>
+                    <span class="stat-value">32.5K+</span>
+                    <span>Forks</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💻</span>
+                    <span class="stat-value">Multiple</span>
+                </div>
+            </div>
+            <a href="#problem" class="hero-cta">
+                Explore
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section" id="problem">
+        <div class="container">
+            <span class="section-label">The Problem</span>
+            <h2 class="section-title">
+                <span class="gradient-text">AI Development Shouldn't Be This Fragmented</span>
+            </h2>
+            <div class="problem-grid">
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">😤</div>
+                    <h3>Siloed Environments</h3>
+                    <p>Agent harnesses like Claude Code, Cursor, and OpenCode have incompatible configs, losing your context between IDEs.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🧠</div>
+                    <h3>Amnesia</h3>
+                    <p>Agents forget previous plans, context, and decisions between sessions, forcing you to start over every time.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🛡️</div>
+                    <h3>Security Risks</h3>
+                    <p>Executing agent code directly without sandbox limits or sanitization exposes your environment to vulnerabilities.</p>
+                </div>
+            </div>
+            <div class="glass-card solution-card">
+                <h3 class="gradient-text">ECC solves this.</h3>
+                <p>ECC is a complete system that provides skills, instincts, memory optimization, and security scanning out of the box, working natively across all major AI agent harnesses.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <span class="section-label">Architecture</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How It Works</span>
+            </h2>
+            <p class="section-description">
+                ECC is an operating system layer that sits between your workflow and the AI agent harness, orchestrating robust behavior.
+            </p>
+        </div>
+
+        <div class="arch-pipeline">
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">⚙️</div>
+                    <h3>Setup & Config</h3>
+                    <p>Install manifest and rules are scoped locally, ensuring a predictable baseline across all projects.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">01</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">02</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🧠</div>
+                    <h3>Memory Persistence</h3>
+                    <p>Lifecycle hooks automatically save and load session contexts, making agents remember past iterations.</p>
+                </div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Skill Engine</h3>
+                    <p>Over 260 modular, cross-platform skills empower the agent with specialized knowledge for any domain.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">03</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">04</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🛡️</div>
+                    <h3>Security & Governance</h3>
+                    <p>AgentShield analyzes generated code and commands to enforce secure execution boundaries.</p>
+                </div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🔁</div>
+                    <h3>Continuous Learning</h3>
+                    <p>Instinct-based learning extracts patterns from sessions to optimize future interactions automatically.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">05</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">06</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🚀</div>
+                    <h3>Execution & Verification</h3>
+                    <p>Automated loops verify output quality, run evals, and validate success before finalizing changes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section class="section" id="usage">
+        <div class="container">
+            <span class="section-label">Usage</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How to Use</span>
+            </h2>
+            
+            <div class="usage-grid">
+                <div class="glass-card usage-step">
+                    <div class="usage-step-title">
+                        <div class="usage-step-num">01</div>
+                        <h3>Add the Marketplace</h3>
+                    </div>
+                    <p>Connect Claude Code to the ECC marketplace repository.</p>
+                    <div class="code-block">
+                        <span class="command">/plugin</span> marketplace add https://github.com/affaan-m/ECC
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('/plugin marketplace add https://github.com/affaan-m/ECC')">Copy</button>
+                    </div>
+                </div>
+
+                <div class="glass-card usage-step">
+                    <div class="usage-step-title">
+                        <div class="usage-step-num">02</div>
+                        <h3>Install the Plugin</h3>
+                    </div>
+                    <p>Install the base ECC plugin into your current environment.</p>
+                    <div class="code-block">
+                        <span class="command">/plugin</span> install ecc@ecc
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('/plugin install ecc@ecc')">Copy</button>
+                    </div>
+                </div>
+
+                <div class="glass-card usage-step">
+                    <div class="usage-step-title">
+                        <div class="usage-step-num">03</div>
+                        <h3>Execute Workflows</h3>
+                    </div>
+                    <p>Use any of the 260+ available skills and commands to plan, build, and deploy features.</p>
+                    <div class="code-block">
+                        <span class="comment"># Example usage in terminal</span><br>
+                        <span class="command">/ecc:plan</span> <span class="string">"Add user authentication"</span>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('/ecc:plan &quot;Add user authentication&quot;')">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Built from <a href="https://github.com/affaan-m/ECC" target="_blank" rel="noopener">affaan-m/ECC</a>.</p>
+            <p style="margin-top: 0.5rem; opacity: 0.7;">Generated with ❤️ &bull; 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Copy functionality feedback
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const originalText = this.innerText;
+                this.innerText = 'Copied!';
+                setTimeout(() => {
+                    this.innerText = originalText;
+                }, 2000);
+            });
+        });
+
+        // GSAP Scroll Animations
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Hide elements initially
+        gsap.set('.glass-card, .arch-step', { opacity: 0, y: 30 });
+
+        // Problem cards
+        ScrollTrigger.batch('.problem-card', {
+            once: true,
+            onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: "power3.out" })
+        });
+        
+        ScrollTrigger.create({
+            trigger: '.solution-card',
+            once: true,
+            onEnter: () => gsap.to('.solution-card', { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" })
+        });
+
+        // Architecture steps
+        ScrollTrigger.batch('.arch-step', {
+            once: true,
+            start: "top 85%",
+            onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.2, duration: 0.8, ease: "power3.out" })
+        });
+
+        // Usage steps
+        ScrollTrigger.batch('.usage-step', {
+            once: true,
+            onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: "power3.out" })
+        });
+
+        // Three.js Particle Background
+        const canvas = document.getElementById('hero-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30;
+
+        // Create particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 1500;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        // Create material
+        const material = new THREE.PointsMaterial({
+            size: 0.05,
+            color: 0x667eea,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        // Add second color material
+        const material2 = new THREE.PointsMaterial({
+            size: 0.08,
+            color: 0x00d2ff,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, material);
+        const particlesMesh2 = new THREE.Points(particlesGeometry, material2);
+        
+        particlesMesh2.position.z = -10;
+        particlesMesh2.scale.set(1.2, 1.2, 1.2);
+
+        scene.add(particlesMesh);
+        scene.add(particlesMesh2);
+
+        // Mouse interaction
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) - 0.5;
+            mouseY = (event.clientY / window.innerHeight) - 0.5;
+        });
+
+        // Animation loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+            particlesMesh.rotation.x = elapsedTime * 0.02;
+            
+            particlesMesh2.rotation.y = elapsedTime * 0.03;
+            particlesMesh2.rotation.x = elapsedTime * 0.01;
+
+            // Parallax effect
+            camera.position.x += (mouseX * 5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
