@@ -1,0 +1,23 @@
+{
+  "skill_name": "repository-to-html",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "/repository-to-html https://github.com/obra/superpowers",
+      "expected_output": "A folder named 'superpowers/' containing an index.html file with a Three.js-powered explainer page about the Superpowers AI coding tool. Should have 4 sections: hero with stats, problem it solves, 3D architecture diagram, and usage instructions.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "hey can you make me a cool visual page for this repo? https://github.com/ollama/ollama I want to understand what it does",
+      "expected_output": "A folder named 'ollama/' containing an index.html file with a Three.js-powered explainer page about Ollama. Should accurately describe Ollama as a tool for running LLMs locally, show its architecture (model management, API server, etc), and include installation/usage steps.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "/repository-to-html https://github.com/pydantic/pydantic",
+      "expected_output": "A folder named 'pydantic/' containing an index.html file with a Three.js-powered explainer page about Pydantic. Should explain data validation in Python, show how validators/models/serialization work in the 3D diagram, and include pip install + basic model usage example.",
+      "files": []
+    }
+  ]
+}
