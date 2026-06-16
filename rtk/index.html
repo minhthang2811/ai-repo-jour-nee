@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTK — Interactive Explainer</title>
+    <meta name="description" content="An interactive visual explainer for RTK: CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #16213e;
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-cyan: #00d2ff;
+            --accent-pink: #f093fb;
+
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --text-muted: #5a6178;
+
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover-bg: rgba(255, 255, 255, 0.06);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.15);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* ===== GLASSMORPHISM CARDS ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.2);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .code-block .comment { color: #5a6178; }
+        .code-block .keyword { color: #c792ea; }
+        .code-block .string { color: #c3e88d; }
+        .code-block .function { color: #82aaff; }
+        .code-block .number { color: #f78c6c; }
+        .code-block .command { color: var(--accent-cyan); }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        /* ===== SECTION TITLE PATTERN ===== */
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin-bottom: 3rem;
+        }
+
+        /* ===== STATS BADGES ===== */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-badge .stat-icon {
+            font-size: 1rem;
+        }
+
+        .stat-badge .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-github {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .nav-github:hover {
+            opacity: 1;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 0.4rem 1.2rem;
+            border-radius: 999px;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-description {
+            font-size: clamp(1rem, 1.5vw, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .hero-cta svg {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(4px); }
+            60% { transform: translateY(2px); }
+        }
+
+        /* ===== SAVINGS TABLE ===== */
+        .savings-table-wrapper {
+            overflow-x: auto;
+            margin-top: 2rem;
+        }
+
+        .savings-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .savings-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+            color: var(--accent-primary);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .savings-table td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+        }
+
+        .savings-table tr:hover td {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .savings-table td:last-child {
+            color: #00e676;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .savings-table td code {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            background: rgba(0, 210, 255, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .savings-table tfoot td {
+            font-weight: 700;
+            color: var(--text-primary);
+            border-top: 2px solid rgba(102, 126, 234, 0.3);
+            border-bottom: none;
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .problem-card {
+            text-align: center;
+        }
+
+        .problem-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .problem-card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .solution-card {
+            text-align: center;
+            padding: 3rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+
+        .solution-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ===== ARCHITECTURE PIPELINE ===== */
+        .arch-pipeline {
+            position: relative;
+            max-width: 900px;
+            margin: 4rem auto 0;
+            padding: 0 2rem;
+        }
+
+        .arch-pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg,
+                rgba(102, 126, 234, 0),
+                rgba(102, 126, 234, 0.6) 10%,
+                rgba(118, 75, 162, 0.6) 50%,
+                rgba(0, 210, 255, 0.6) 90%,
+                rgba(0, 210, 255, 0)
+            );
+            border-radius: 2px;
+        }
+
+        .arch-pipeline::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 7px;
+            height: 7px;
+            transform: translateX(-50%);
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-cyan), 0 0 24px rgba(0, 210, 255, 0.4);
+            animation: flowDown 4s ease-in-out infinite;
+        }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .arch-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .arch-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .arch-step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .arch-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .arch-step-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            z-index: 2;
+            border: 2px solid;
+            transition: var(--transition);
+        }
+
+        .arch-step-node::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0.3;
+            animation: nodePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .arch-step:nth-child(1) .arch-step-node { background: rgba(102, 126, 234, 0.15); border-color: #667eea; }
+        .arch-step:nth-child(1) .arch-step-node::before { border-color: #667eea; }
+        .arch-step:nth-child(2) .arch-step-node { background: rgba(118, 75, 162, 0.15); border-color: #764ba2; }
+        .arch-step:nth-child(2) .arch-step-node::before { border-color: #764ba2; }
+        .arch-step:nth-child(3) .arch-step-node { background: rgba(0, 210, 255, 0.15); border-color: #00d2ff; }
+        .arch-step:nth-child(3) .arch-step-node::before { border-color: #00d2ff; }
+        .arch-step:nth-child(4) .arch-step-node { background: rgba(240, 147, 251, 0.15); border-color: #f093fb; }
+        .arch-step:nth-child(4) .arch-step-node::before { border-color: #f093fb; }
+        .arch-step:nth-child(5) .arch-step-node { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+        .arch-step:nth-child(5) .arch-step-node::before { border-color: #ffd700; }
+        .arch-step:nth-child(6) .arch-step-node { background: rgba(0, 230, 118, 0.15); border-color: #00e676; }
+        .arch-step:nth-child(6) .arch-step-node::before { border-color: #00e676; }
+        .arch-step:nth-child(7) .arch-step-node { background: rgba(255, 107, 107, 0.15); border-color: #ff6b6b; }
+        .arch-step:nth-child(7) .arch-step-node::before { border-color: #ff6b6b; }
+
+        .arch-step-connector {
+            flex: 0 0 60px;
+            height: 2px;
+            position: relative;
+        }
+
+        .arch-step-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        .arch-step:nth-child(even) .arch-step-connector::before {
+            background: linear-gradient(270deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        .arch-step-card {
+            flex: 1;
+            max-width: calc(50% - 84px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .arch-step-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.25);
+            box-shadow: 0 0 40px rgba(102, 126, 234, 0.12), 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .arch-step:nth-child(1) .arch-step-card:hover { box-shadow: 0 0 40px rgba(102, 126, 234, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .arch-step:nth-child(2) .arch-step-card:hover { box-shadow: 0 0 40px rgba(118, 75, 162, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .arch-step:nth-child(3) .arch-step-card:hover { box-shadow: 0 0 40px rgba(0, 210, 255, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .arch-step:nth-child(4) .arch-step-card:hover { box-shadow: 0 0 40px rgba(240, 147, 251, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .arch-step:nth-child(5) .arch-step-card:hover { box-shadow: 0 0 40px rgba(255, 215, 0, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .arch-step:nth-child(6) .arch-step-card:hover { box-shadow: 0 0 40px rgba(0, 230, 118, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .arch-step:nth-child(7) .arch-step-card:hover { box-shadow: 0 0 40px rgba(255, 107, 107, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3); }
+
+        .arch-step-card .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .arch-step-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .arch-step-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .arch-step-spacer {
+            flex: 1;
+            max-width: calc(50% - 84px);
+        }
+
+        /* ===== USAGE SECTION ===== */
+        .usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 700px;
+        }
+
+        .usage-step {
+            position: relative;
+            padding-left: 5rem;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 1.5rem;
+            top: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            opacity: 0.5;
+        }
+
+        .usage-step h3 {
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+        }
+
+        .usage-step p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        /* ===== FLOW DIAGRAM ===== */
+        .flow-diagram {
+            margin: 2.5rem 0;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            overflow-x: auto;
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .flow-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .flow-label {
+            color: var(--text-muted);
+            min-width: 80px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .flow-box {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .flow-box.agent { background: rgba(102, 126, 234, 0.15); color: #667eea; border: 1px solid rgba(102, 126, 234, 0.3); }
+        .flow-box.rtk { background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3); }
+        .flow-box.cmd { background: rgba(240, 147, 251, 0.15); color: #f093fb; border: 1px solid rgba(240, 147, 251, 0.3); }
+        .flow-box.output { background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .footer-line {
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-secondary), transparent);
+            margin: 0 auto 2rem;
+        }
+
+        .footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-sub {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .nav-links a:not(.nav-github) {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-pipeline::before,
+            .arch-pipeline::after {
+                left: 24px;
+            }
+
+            .arch-step {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 60px;
+            }
+
+            .arch-step-node {
+                left: 24px;
+                top: 0;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 40px;
+                font-size: 0.75rem;
+            }
+
+            .arch-step-connector {
+                display: none;
+            }
+
+            .arch-step-card {
+                max-width: 100%;
+            }
+
+            .arch-step-spacer {
+                display: none;
+            }
+
+            .usage-step {
+                padding-left: 1.5rem;
+                padding-top: 3.5rem;
+            }
+
+            .step-number {
+                left: 1.5rem;
+                top: 1.5rem;
+            }
+
+            section {
+                padding: 5rem 0;
+            }
+
+            .flow-diagram {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .hero-title {
+                font-size: 1.8rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">RTK</a>
+            <div class="nav-links">
+                <a href="#problem">Problem</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#usage">Usage</a>
+                <a href="https://github.com/rtk-ai/rtk" target="_blank" rel="noopener" class="nav-github">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge">Open Source · Rust · Apache 2.0</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">RTK</span>
+            </h1>
+            <p class="hero-description">High-performance CLI proxy that reduces LLM token consumption by 60-90%. Single Rust binary, 100+ supported commands, &lt;10ms overhead.</p>
+            <div class="stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">62.8k</span>
+                    <span>Stars</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🍴</span>
+                    <span class="stat-value">3.9k</span>
+                    <span>Forks</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💻</span>
+                    <span class="stat-value">Rust</span>
+                </div>
+            </div>
+            <a href="#problem" class="hero-cta">
+                Explore
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section" id="problem">
+        <div class="container">
+            <span class="section-label">The Problem</span>
+            <h2 class="section-title">
+                <span class="gradient-text">AI Coding Is Burning Through Your Tokens</span>
+            </h2>
+            <div class="problem-grid">
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">💸</div>
+                    <h3>Massive Token Waste</h3>
+                    <p>Every <code>git status</code>, <code>ls</code>, or test run dumps thousands of raw, unfiltered tokens into your LLM context — most of it noise your AI doesn't need.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🧠</div>
+                    <h3>Context Window Overflow</h3>
+                    <p>LLMs have finite context windows. Bloated command outputs push out valuable conversation history, making your AI assistant forget what you were working on.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Slower Responses</h3>
+                    <p>More tokens means more processing time and higher costs. A 30-minute coding session can consume ~118,000 tokens on command outputs alone.</p>
+                </div>
+            </div>
+            <div class="glass-card solution-card">
+                <h3 class="gradient-text">RTK solves this.</h3>
+                <p>RTK sits between your AI coding agent and the shell, intelligently filtering and compressing command outputs before they reach your LLM context — cutting token consumption by 60-90% with zero configuration and under 10ms overhead.</p>
+            </div>
+
+            <div class="savings-table-wrapper glass-card" style="margin-top: 2rem; padding: 1.5rem;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Token Savings in a 30-min Claude Code Session</h3>
+                <table class="savings-table">
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>Freq</th>
+                            <th>Standard</th>
+                            <th>RTK</th>
+                            <th>Savings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>ls / tree</code></td><td>10×</td><td>2,000</td><td>400</td><td>-80%</td></tr>
+                        <tr><td><code>cat / read</code></td><td>20×</td><td>40,000</td><td>12,000</td><td>-70%</td></tr>
+                        <tr><td><code>grep / rg</code></td><td>8×</td><td>16,000</td><td>3,200</td><td>-80%</td></tr>
+                        <tr><td><code>git status</code></td><td>10×</td><td>3,000</td><td>600</td><td>-80%</td></tr>
+                        <tr><td><code>git diff</code></td><td>5×</td><td>10,000</td><td>2,500</td><td>-75%</td></tr>
+                        <tr><td><code>cargo test / npm test</code></td><td>5×</td><td>25,000</td><td>2,500</td><td>-90%</td></tr>
+                        <tr><td><code>pytest</code></td><td>4×</td><td>8,000</td><td>800</td><td>-90%</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr><td>Total</td><td></td><td>~118,000</td><td>~23,900</td><td style="color: #00e676;">-80%</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <span class="section-label">Architecture</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How It Works</span>
+            </h2>
+            <p class="section-description">
+                RTK acts as a transparent CLI proxy. When your AI coding agent runs a command, RTK intercepts it, executes the real command, then applies four intelligent filtering strategies to compress the output before it reaches the LLM.
+            </p>
+
+            <div class="flow-diagram">
+                <div class="flow-row">
+                    <span class="flow-label">Without RTK</span>
+                    <span class="flow-box agent">Claude / Copilot</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-box cmd">git status</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-box output">~2,000 tokens (raw)</span>
+                </div>
+                <div class="flow-row">
+                    <span class="flow-label">With RTK</span>
+                    <span class="flow-box agent">Claude / Copilot</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-box rtk">RTK proxy</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-box cmd">git status</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-box output" style="color: #00e676; border-color: rgba(0, 230, 118, 0.3);">~200 tokens ✓</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="arch-pipeline">
+            <!-- Step 1 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Command Interception</h3>
+                    <p>RTK hooks into your AI agent via shell hooks or plugin APIs. When the agent runs a command, it's automatically rewritten to pass through RTK — e.g. <code>git status</code> becomes <code>rtk git status</code>.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">01</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">02</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Command Router</h3>
+                    <p>RTK's routing engine identifies the command type (git, test runner, linter, file operation) and selects the appropriate filter pipeline from 100+ supported command handlers.</p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🧹</div>
+                    <h3>Smart Filtering</h3>
+                    <p>Strips noise — comments, whitespace, boilerplate headers, ANSI color codes, and decorative output that humans need but LLMs don't. Keeps only semantically meaningful content.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">03</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">04</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">📦</div>
+                    <h3>Grouping & Aggregation</h3>
+                    <p>Similar items are intelligently grouped — files by directory, errors by type, test results by status. Instead of listing 50 files individually, you see directory summaries.</p>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">✂️</div>
+                    <h3>Truncation</h3>
+                    <p>Keeps the most relevant context and cuts redundancy. Long stack traces become concise error summaries. Verbose test output shows only failures, not the hundreds of passing tests.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">05</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">06</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🔄</div>
+                    <h3>Deduplication</h3>
+                    <p>Collapses repeated log lines with counts. Instead of showing the same warning 200 times, RTK outputs it once with <code>×200</code> — dramatically reducing token count.</p>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">📊</div>
+                    <h3>Analytics & Tracking</h3>
+                    <p>RTK tracks token savings with <code>rtk gain</code>, showing real-time statistics on how many tokens you've saved. Built-in session tracking and cost estimation for your AI workflows.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">07</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section class="section" id="usage">
+        <div class="container">
+            <span class="section-label">Get Started</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How to Use</span>
+            </h2>
+
+            <div class="usage-steps">
+                <div class="usage-step glass-card">
+                    <div class="step-number">01</div>
+                    <h3>Install</h3>
+                    <p>Install via Homebrew (recommended), curl, or cargo.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="comment"># Homebrew (recommended)</span>
+<span class="command">$</span> brew install rtk
+
+<span class="comment"># Quick install (Linux/macOS)</span>
+<span class="command">$</span> curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
+<span class="comment"># Cargo</span>
+<span class="command">$</span> cargo install --git https://github.com/rtk-ai/rtk</code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">02</div>
+                    <h3>Initialize for Your AI Agent</h3>
+                    <p>RTK supports Claude Code, Copilot, Gemini CLI, Cursor, Windsurf, Cline, and more.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">$</span> rtk init -g                     <span class="comment"># Claude Code / Copilot</span>
+<span class="command">$</span> rtk init -g --gemini            <span class="comment"># Gemini CLI</span>
+<span class="command">$</span> rtk init -g --agent cursor      <span class="comment"># Cursor</span>
+<span class="command">$</span> rtk init -g --agent windsurf    <span class="comment"># Windsurf</span>
+<span class="command">$</span> rtk init --agent cline          <span class="comment"># Cline / Roo Code</span>
+<span class="command">$</span> rtk init -g --agent antigravity <span class="comment"># Antigravity</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">03</div>
+                    <h3>Use It</h3>
+                    <p>Restart your AI tool and start coding. Commands are automatically rewritten to pass through RTK.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="comment"># Commands are auto-rewritten by the hook:</span>
+<span class="command">$</span> git status      <span class="comment"># → rtk git status (compact output)</span>
+<span class="command">$</span> git diff         <span class="comment"># → rtk git diff (condensed diff)</span>
+<span class="command">$</span> cargo test       <span class="comment"># → rtk cargo test (failures only, -90%)</span>
+
+<span class="comment"># Or call RTK directly:</span>
+<span class="command">$</span> rtk ls .         <span class="comment"># Token-optimized directory tree</span>
+<span class="command">$</span> rtk read file.rs <span class="comment"># Smart file reading</span>
+<span class="command">$</span> rtk grep "pattern" . <span class="comment"># Grouped search results</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">04</div>
+                    <h3>Track Your Savings</h3>
+                    <p>Monitor real-time token savings and cost reduction with built-in analytics.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">$</span> rtk gain         <span class="comment"># Show token savings stats</span>
+<span class="command">$</span> rtk --version    <span class="comment"># Verify installation</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-line"></div>
+        <div class="container">
+            <p>
+                Built from
+                <a href="https://github.com/rtk-ai/rtk" target="_blank" rel="noopener">github.com/rtk-ai/rtk</a>
+            </p>
+            <p class="footer-sub">Generated with ❤️ · 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        // ===== HERO PARTICLE BACKGROUND =====
+        function initHeroScene() {
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Particles
+            const particleCount = 800;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            const spread = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0x667eea,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 25;
+
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    pos[i * 3] += velocities[i].x;
+                    pos[i * 3 + 1] += velocities[i].y;
+                    pos[i * 3 + 2] += velocities[i].z;
+
+                    for (let j = 0; j < 3; j++) {
+                        if (pos[i * 3 + j] > spread / 2) pos[i * 3 + j] = -spread / 2;
+                        if (pos[i * 3 + j] < -spread / 2) pos[i * 3 + j] = spread / 2;
+                    }
+                }
+                geometry.attributes.position.needsUpdate = true;
+
+                camera.position.x += (mouseX * 2 - camera.position.x) * 0.02;
+                camera.position.y += (mouseY * 2 - camera.position.y) * 0.02;
+                camera.lookAt(scene.position);
+
+                particles.rotation.y += 0.0005;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            });
+        }
+
+        // ===== SCROLL ANIMATIONS =====
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            gsap.utils.toArray('.section').forEach(section => {
+                const elements = section.querySelectorAll(
+                    '.section-label, .section-title, .section-description, .glass-card, .usage-step, .arch-step, .flow-diagram, .savings-table-wrapper'
+                );
+
+                gsap.set(elements, { y: 60, opacity: 0 });
+
+                ScrollTrigger.create({
+                    trigger: section,
+                    start: 'top 85%',
+                    once: true,
+                    onEnter: () => {
+                        gsap.to(elements, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.8,
+                            stagger: 0.12,
+                            ease: 'power3.out'
+                        });
+                    }
+                });
+            });
+
+            const heroElements = document.querySelectorAll('.hero-content > *');
+            gsap.set(heroElements, { y: 40, opacity: 0 });
+            gsap.to(heroElements, {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                stagger: 0.2,
+                ease: 'power3.out',
+                delay: 0.3
+            });
+        }
+
+        // ===== NAV SCROLL EFFECT =====
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // ===== COPY TO CLIPBOARD =====
+        function copyCode(btn) {
+            const codeBlock = btn.parentElement.querySelector('code');
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // ===== INIT EVERYTHING =====
+        document.addEventListener('DOMContentLoaded', () => {
+            initHeroScene();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>
