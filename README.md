@@ -36,11 +36,13 @@ This project leverages AI to transform complex open-source repositories into **s
 | 6 | [graphify](./graphify/) | 🛠️ Developer Tools | Turn any folder of code, SQL schemas, shell scripts, docs, and images into a queryable knowledge graph | [safishamsi/graphify](https://github.com/safishamsi/graphify) |
 | 7 | [gstack](./gstack/) | 🛠️ Developer Tools | Garry Tan's exact Claude Code setup: 23 opinionated tools that serve as CEO, Designer, Eng Manager, Release Manager, Doc Engineer, and QA | [garrytan/gstack](https://github.com/garrytan/gstack) |
 | 8 | [headroom](./headroom/) | 🛠️ Developer Tools | Context compression layer for AI agents — compress tool outputs, logs, and RAG chunks before they reach the LLM (60–95% fewer tokens) | [chopratejas/headroom](https://github.com/chopratejas/headroom) |
-| 9 | [mattpocock-skills](./mattpocock-skills/) | 🤖 AI Agents & Skills | Structured agent skills, prompts, and workflows from Matt Pocock's .claude directory for solving real-world problems | [mattpocock/skills](https://github.com/mattpocock/skills) |
-| 10 | [ponytail](./ponytail/) | 🤖 AI Agents & Skills | Makes your AI agent think like the laziest senior dev in the room, prioritizing simplicity and writing less code | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) |
-| 11 | [rtk](./rtk/) | 🛠️ Developer Tools | CLI proxy that reduces LLM token consumption by 60-90% on common dev commands, packaged as a single Rust binary | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) |
-| 12 | [superpowers](./superpowers/) | 🤖 AI Agents & Skills | A complete software development methodology for coding agents — composable skills and instructions that make AI agents work the way you want | [obra/superpowers](https://github.com/obra/superpowers) |
-| 13 | [taste-skill](./taste-skill/) | 🎨 Design & Quality | Gives your AI good taste — stops the AI from generating boring, generic slop | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) |
+| 9 | [hyperframes](./hyperframes/) | 🛠️ Developer Tools | Write HTML. Render video. Built for agents to programmatically generate rich motion graphics | [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes) |
+| 10 | [mattpocock-skills](./mattpocock-skills/) | 🤖 AI Agents & Skills | Structured agent skills, prompts, and workflows from Matt Pocock's .claude directory for solving real-world problems | [mattpocock/skills](https://github.com/mattpocock/skills) |
+| 11 | [ponytail](./ponytail/) | 🤖 AI Agents & Skills | Makes your AI agent think like the laziest senior dev in the room, prioritizing simplicity and writing less code | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) |
+| 12 | [prompts.chat](./prompts.chat/) | 🤖 AI Agents & Skills | The world's largest open-source prompt library for AI. Share, discover, and collect prompts from the community | [f/prompts.chat](https://github.com/f/prompts.chat) |
+| 13 | [rtk](./rtk/) | 🛠️ Developer Tools | CLI proxy that reduces LLM token consumption by 60-90% on common dev commands, packaged as a single Rust binary | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) |
+| 14 | [superpowers](./superpowers/) | 🤖 AI Agents & Skills | A complete software development methodology for coding agents — composable skills and instructions that make AI agents work the way you want | [obra/superpowers](https://github.com/obra/superpowers) |
+| 15 | [taste-skill](./taste-skill/) | 🎨 Design & Quality | Gives your AI good taste — stops the AI from generating boring, generic slop | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) |
 
 ---
 
@@ -48,8 +50,8 @@ This project leverages AI to transform complex open-source repositories into **s
 
 | Category | Count | What's Inside |
 |----------|-------|---------------|
-| 🤖 **AI Agents & Skills** | 5 | Frameworks, skills, and methodologies for building better AI coding agents |
-| 🛠️ **Developer Tools** | 5 | Utilities that enhance developer workflows — from knowledge graphs to context compression |
+| 🤖 **AI Agents & Skills** | 6 | Frameworks, skills, and methodologies for building better AI coding agents |
+| 🛠️ **Developer Tools** | 6 | Utilities that enhance developer workflows — from knowledge graphs to context compression |
 | 🧩 **AI Coding Assistants** | 1 | Agent harness systems and optimization for tools like Claude Code and Codex |
 | 🔍 **Understanding AI** | 1 | Tools that make codebases explorable and queryable |
 | 🎨 **Design & Quality** | 1 | Skills that inject taste and quality standards into AI-generated output |
