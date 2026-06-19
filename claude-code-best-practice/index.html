@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>claude-code-best-practice — Interactive Explainer</title>
+    <meta name="description" content="An interactive visual explainer for claude-code-best-practice: from vibe coding to agentic engineering - practice makes claude perfect">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #121220;
+            --bg-tertiary: #16162a;
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-cyan: #00d2ff;
+            --accent-pink: #f093fb;
+
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --text-muted: #5a6178;
+
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-hover-bg: rgba(255, 255, 255, 0.05);
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --shadow-glow: 0 0 40px rgba(102, 126, 234, 0.15);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-sm);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4 {
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #8ba4f9, var(--accent-cyan), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* ===== GLASSMORPHISM CARDS ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2.2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            background: var(--glass-hover-bg);
+            border-color: rgba(102, 126, 234, 0.25);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-4px);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+            margin-top: 0.75rem;
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .code-block .comment { color: #5a6178; }
+        .code-block .keyword { color: #c792ea; }
+        .code-block .string { color: #c3e88d; }
+        .code-block .function { color: #82aaff; }
+        .code-block .number { color: #f78c6c; }
+        .code-block .command { color: var(--accent-cyan); font-weight: bold; }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* ===== SECTION TITLE PATTERN ===== */
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            font-weight: 800;
+        }
+
+        .section-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 720px;
+            margin-bottom: 4rem;
+        }
+
+        /* ===== STATS BADGES ===== */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2.5rem;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            padding: 0.6rem 1.5rem;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+
+        .stat-badge:hover {
+            border-color: rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.05);
+        }
+
+        .stat-badge .stat-icon {
+            font-size: 1.1rem;
+        }
+
+        .stat-badge .stat-value {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.25rem 0;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0.9rem 0;
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-logo span {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2.2rem;
+        }
+
+        .nav-links a:not(.nav-github) {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-links a:not(.nav-github):hover {
+            color: var(--text-primary);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-github {
+            opacity: 0.8;
+            transition: var(--transition);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-github:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 880px;
+            padding: 6rem 2rem 2rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 210, 255, 0.25);
+            background: rgba(0, 210, 255, 0.03);
+            padding: 0.45rem 1.4rem;
+            border-radius: 999px;
+            margin-bottom: 2.2rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.05);
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5.5vw, 4.8rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.8rem;
+            letter-spacing: -0.04em;
+        }
+
+        .hero-description {
+            font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 1.5rem;
+            padding: 0.95rem 2.2rem;
+            background: linear-gradient(135deg, var(--accent-primary), #5b54db);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.35);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-cta svg {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(4px); }
+            60% { transform: translateY(2px); }
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3.5rem;
+        }
+
+        .problem-card {
+            text-align: left;
+            padding: 2.5rem;
+        }
+
+        .problem-icon {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+
+        .problem-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.98rem;
+            line-height: 1.6;
+        }
+
+        .solution-card {
+            text-align: center;
+            padding: 3.5rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.03), rgba(118, 75, 162, 0.03));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solution-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .solution-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .solution-card p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 780px;
+            margin: 0 auto;
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== ARCHITECTURE PIPELINE ===== */
+        .arch-pipeline {
+            position: relative;
+            max-width: 1000px;
+            margin: 4rem auto 0;
+            padding: 0 2rem;
+        }
+
+        /* Central animated spine */
+        .arch-pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg,
+                rgba(102, 126, 234, 0),
+                rgba(102, 126, 234, 0.6) 10%,
+                rgba(118, 75, 162, 0.6) 40%,
+                rgba(0, 210, 255, 0.6) 70%,
+                rgba(240, 147, 251, 0.6) 90%,
+                rgba(240, 147, 251, 0)
+            );
+            border-radius: 2px;
+        }
+
+        /* Flowing particle dot on the spine */
+        .arch-pipeline::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 9px;
+            height: 9px;
+            transform: translateX(-50%);
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 14px var(--accent-cyan), 0 0 28px rgba(0, 210, 255, 0.6);
+            animation: flowDown 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes flowDown {
+            0% { top: 0; opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Each step row */
+        .arch-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 4rem;
+        }
+
+        .arch-step:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Alternate layout */
+        .arch-step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .arch-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        /* The node circle on the spine */
+        .arch-step-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            z-index: 2;
+            border: 2px solid;
+            transition: var(--transition);
+            box-shadow: var(--shadow-card);
+        }
+
+        .arch-step-node::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0.3;
+            animation: nodePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Node unique color styling */
+        .arch-step:nth-child(1) .arch-step-node { background: rgba(102, 126, 234, 0.15); border-color: #667eea; }
+        .arch-step:nth-child(1) .arch-step-node::before { border-color: #667eea; }
+        .arch-step:nth-child(2) .arch-step-node { background: rgba(118, 75, 162, 0.15); border-color: #764ba2; }
+        .arch-step:nth-child(2) .arch-step-node::before { border-color: #764ba2; }
+        .arch-step:nth-child(3) .arch-step-node { background: rgba(0, 210, 255, 0.15); border-color: #00d2ff; }
+        .arch-step:nth-child(3) .arch-step-node::before { border-color: #00d2ff; }
+        .arch-step:nth-child(4) .arch-step-node { background: rgba(240, 147, 251, 0.15); border-color: #f093fb; }
+        .arch-step:nth-child(4) .arch-step-node::before { border-color: #f093fb; }
+        .arch-step:nth-child(5) .arch-step-node { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+        .arch-step:nth-child(5) .arch-step-node::before { border-color: #ffd700; }
+        .arch-step:nth-child(6) .arch-step-node { background: rgba(0, 230, 118, 0.15); border-color: #00e676; }
+        .arch-step:nth-child(6) .arch-step-node::before { border-color: #00e676; }
+        .arch-step:nth-child(7) .arch-step-node { background: rgba(255, 107, 107, 0.15); border-color: #ff6b6b; }
+        .arch-step:nth-child(7) .arch-step-node::before { border-color: #ff6b6b; }
+
+        /* Connector line from node to card */
+        .arch-step-connector {
+            flex: 0 0 60px;
+            height: 2px;
+            position: relative;
+        }
+
+        .arch-step-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        .arch-step:nth-child(even) .arch-step-connector::before {
+            background: linear-gradient(270deg, rgba(102, 126, 234, 0.4), rgba(0, 210, 255, 0.4));
+        }
+
+        /* The card */
+        .arch-step-card {
+            flex: 1;
+            max-width: calc(50% - 86px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-card);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .arch-step-card:hover {
+            background: var(--glass-hover-bg);
+            transform: translateY(-4px) scale(1.01);
+        }
+
+        /* Per-step hover border glow */
+        .arch-step:nth-child(1) .arch-step-card:hover { border-color: rgba(102, 126, 234, 0.4); box-shadow: 0 0 45px rgba(102, 126, 234, 0.18), var(--shadow-card); }
+        .arch-step:nth-child(2) .arch-step-card:hover { border-color: rgba(118, 75, 162, 0.4); box-shadow: 0 0 45px rgba(118, 75, 162, 0.18), var(--shadow-card); }
+        .arch-step:nth-child(3) .arch-step-card:hover { border-color: rgba(0, 210, 255, 0.4); box-shadow: 0 0 45px rgba(0, 210, 255, 0.18), var(--shadow-card); }
+        .arch-step:nth-child(4) .arch-step-card:hover { border-color: rgba(240, 147, 251, 0.4); box-shadow: 0 0 45px rgba(240, 147, 251, 0.18), var(--shadow-card); }
+        .arch-step:nth-child(5) .arch-step-card:hover { border-color: rgba(255, 215, 0, 0.4); box-shadow: 0 0 45px rgba(255, 215, 0, 0.18), var(--shadow-card); }
+        .arch-step:nth-child(6) .arch-step-card:hover { border-color: rgba(0, 230, 118, 0.4); box-shadow: 0 0 45px rgba(0, 230, 118, 0.18), var(--shadow-card); }
+        .arch-step:nth-child(7) .arch-step-card:hover { border-color: rgba(255, 107, 107, 0.4); box-shadow: 0 0 45px rgba(255, 107, 107, 0.18), var(--shadow-card); }
+
+        .arch-step-card .card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            display: inline-block;
+        }
+
+        .arch-step-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .arch-step-card p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Spacer to push cards to opposite sides */
+        .arch-step-spacer {
+            flex: 1;
+            max-width: calc(50% - 86px);
+        }
+
+        /* ===== USAGE SECTION ===== */
+        .usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .usage-step {
+            position: relative;
+            padding-left: 5.5rem;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 2rem;
+            top: 2rem;
+            font-family: var(--font-mono);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            opacity: 0.4;
+            line-height: 1;
+        }
+
+        .usage-step h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .usage-step p {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 5rem 0 4rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-line {
+            width: 280px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-cyan), transparent);
+            margin: 0 auto 2.5rem;
+        }
+
+        .footer p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .footer a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+        }
+
+        .footer-sub {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .nav-links a:not(.nav-github) {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 2.8rem;
+            }
+
+            .hero-description {
+                font-size: 1.1rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .stat-badge {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-pipeline::before,
+            .arch-pipeline::after {
+                left: 24px;
+            }
+
+            .arch-step {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 60px;
+                margin-bottom: 3rem;
+            }
+
+            .arch-step-node {
+                left: 24px;
+                top: 0;
+                transform: translateX(-50%);
+                width: 44px;
+                height: 44px;
+                font-size: 0.8rem;
+            }
+
+            .arch-step-connector {
+                display: none;
+            }
+
+            .arch-step-card {
+                max-width: 100%;
+                padding: 1.75rem;
+            }
+
+            .arch-step-spacer {
+                display: none;
+            }
+
+            .usage-step {
+                padding-left: 2rem;
+                padding-top: 4rem;
+            }
+
+            .step-number {
+                left: 2rem;
+                top: 1.8rem;
+            }
+
+            .section {
+                padding: 5rem 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1.25rem;
+            }
+
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .section-title {
+                font-size: 1.7rem;
+            }
+            
+            .solution-card {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">claude-code-<span>best-practice</span></a>
+            <div class="nav-links">
+                <a href="#problem">Problem</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#usage">Usage</a>
+                <a href="https://github.com/shanraisshan/claude-code-best-practice" target="_blank" rel="noopener" class="nav-github" aria-label="GitHub Repository">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge">Open Source · AI Engineering</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">claude-code-best-practice</span>
+            </h1>
+            <p class="hero-description">From vibe coding to agentic engineering - practice makes Claude perfect</p>
+            <div class="stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value">58,337</span>
+                    <span>Stars</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🍴</span>
+                    <span class="stat-value">5,866</span>
+                    <span>Forks</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💻</span>
+                    <span class="stat-value">HTML / Shell / Python</span>
+                </div>
+            </div>
+            <a href="#problem" class="hero-cta">
+                Explore The Guide
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section" id="problem">
+        <div class="container">
+            <span class="section-label">The Problem</span>
+            <h2 class="section-title">
+                <span class="gradient-text">Why Agentic Engineering Matters</span>
+            </h2>
+            <p class="section-description">
+                AI coding tools have supercharged software development, but simple text-generation interfaces lead to severe limitations as projects scale.
+            </p>
+            <div class="problem-grid">
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">😤</div>
+                    <h3>Vibe Coding Chaos</h3>
+                    <p>Writing code without structured guardrails or test-driven cycles leads to disjointed, bug-ridden implementations that collapse as soon as codebase size and logical complexity increase.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">🔧</div>
+                    <h3>Context &amp; Token Bloat</h3>
+                    <p>Without isolated agent boundaries, session histories quickly balloon with raw file contents and tool outputs, causing context rot. The model enters a "dumb zone" and starts ignoring instructions.</p>
+                </div>
+                <div class="glass-card problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Repetitive Prompting</h3>
+                    <p>Developers waste significant time feeding Claude the same compilation steps, lint rules, and instructions for every new task. Manual process checking is slow, expensive, and error-prone.</p>
+                </div>
+            </div>
+            <div class="glass-card solution-card">
+                <h3 class="gradient-text">claude-code-best-practice solves this.</h3>
+                <p>By formalizing modular primitives—custom slash commands, lifecycle hooks, progressive-disclosure skills, and isolated subagents—this repository converts Claude Code from a chat tool into a reliable, developer-controlled agentic engineering pipeline.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <span class="section-label">Architecture</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How It Works</span>
+            </h2>
+            <p class="section-description">
+                A premium, multi-layered system designed to minimize token overhead, protect context, and enforce strict execution standards across all agent operations.
+            </p>
+        </div>
+
+        <div class="arch-pipeline">
+            <!-- Step 1 (odd = card on left, spacer on right) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Slash Commands</h3>
+                    <p>Custom entry points defined in <code>.claude/commands/</code>. They initiate clean, reproducible workflows (e.g. <code>/weather-orchestrator</code>, <code>/ce-plan</code>) and handle developer queries directly.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">01</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 2 (even = spacer on left, card on right) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">02</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">🤖</div>
+                    <h3>Context Isolation (Subagents)</h3>
+                    <p>The primary session delegates heavy tasks to isolated subagents. Raw search outputs, greps, and dead ends are contained within the subagent context, returning only the final report to the main session.</p>
+                </div>
+            </div>
+
+            <!-- Step 3 (odd = card on left, spacer on right) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🧩</div>
+                    <h3>Skills Engine</h3>
+                    <p>Progressive disclosure folders containing <code>SKILL.md</code>, references, and scripts. They are automatically lazy-loaded only when the agent touches matching globs, saving precious token window space.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">03</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 4 (even = spacer on left, card on right) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">04</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Lifecycle Hooks</h3>
+                    <p>Event-driven scripts in <code>.claude/hooks/</code> that trigger on session start, tool use, cwd changes, or stop. Enforces auto-formatting, checks permissions, and plays system sound notifications.</p>
+                </div>
+            </div>
+
+            <!-- Step 5 (odd = card on left, spacer on right) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">📡</div>
+                    <h3>MCP Server Integrations</h3>
+                    <p>Model Context Protocol servers that act as API gateways. Connecting Claude Code directly to local filesystems, external databases, or browser automations via standard JSON-RPC interfaces.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">05</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+
+            <!-- Step 6 (even = spacer on left, card on right) -->
+            <div class="arch-step">
+                <div class="arch-step-spacer"></div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">06</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-card">
+                    <div class="card-icon">📋</div>
+                    <h3>Memory &amp; State Guard</h3>
+                    <p>Utilizes a lightweight, strict <code>CLAUDE.md</code> memory file (&lt; 200 lines) combined with global and project rules to enforce constraints, command aliases, and build specifications.</p>
+                </div>
+            </div>
+
+            <!-- Step 7 (odd = card on left, spacer on right) -->
+            <div class="arch-step">
+                <div class="arch-step-card">
+                    <div class="card-icon">🏗️</div>
+                    <h3>The Engineering Loop</h3>
+                    <p>Converges all actions onto the systematic <strong>Research &rarr; Plan &rarr; Execute &rarr; Review &rarr; Ship</strong> cycle, backed by automated test-driven development (TDD) gates.</p>
+                </div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-node">07</div>
+                <div class="arch-step-connector"></div>
+                <div class="arch-step-spacer"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section class="section" id="usage">
+        <div class="container">
+            <span class="section-label">Get Started</span>
+            <h2 class="section-title">
+                <span class="gradient-text">How to Use</span>
+            </h2>
+            <p class="section-description">
+                Follow these steps to learn, practice, and implement Claude Code best practices in your own local environment.
+            </p>
+
+            <div class="usage-steps">
+                <div class="usage-step glass-card">
+                    <div class="step-number">01</div>
+                    <h3>Install Claude Code</h3>
+                    <p>Ensure Node.js is installed, then globally install the official Anthropic Claude Code CLI.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">$</span> npm install -g @anthropic-ai/claude-code</code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">02</div>
+                    <h3>Clone the Best Practice Repository</h3>
+                    <p>Clone the codebase containing the commands, hooks, and skills, then enter it.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">$</span> git clone https://github.com/shanraisshan/claude-code-best-practice.git
+cd claude-code-best-practice</code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">03</div>
+                    <h3>Open the Interactive CLI Session</h3>
+                    <p>Launch the Claude Code TUI to load local rules and custom configurations.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code><span class="command">$</span> claude</code></pre>
+                    </div>
+                </div>
+
+                <div class="usage-step glass-card">
+                    <div class="step-number">04</div>
+                    <h3>Run the Weather Orchestrator Demo</h3>
+                    <p>Once inside the interactive prompt, trigger the weather demo to watch the orchestration workflow execute.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>/weather-orchestrator</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-line"></div>
+        <div class="container">
+            <p>
+                Built from
+                <a href="https://github.com/shanraisshan/claude-code-best-practice" target="_blank" rel="noopener">github.com/shanraisshan/claude-code-best-practice</a>
+            </p>
+            <p class="footer-sub">Generated with ❤️ · 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Copy to clipboard function
+        function copyCode(btn) {
+            const codeBlock = btn.parentElement.querySelector('code');
+            let text = codeBlock.innerText || codeBlock.textContent;
+            if (text.startsWith('$ ')) {
+                text = text.substring(2);
+            }
+            navigator.clipboard.writeText(text.trim()).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // ===== HERO PARTICLE BACKGROUND =====
+        function initHeroScene() {
+            const canvas = document.getElementById('hero-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Particles
+            const particleCount = 800;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            const spread = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0x667eea,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 25;
+
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    pos[i * 3] += velocities[i].x;
+                    pos[i * 3 + 1] += velocities[i].y;
+                    pos[i * 3 + 2] += velocities[i].z;
+
+                    // Wrap around
+                    for (let j = 0; j < 3; j++) {
+                        if (pos[i * 3 + j] > spread / 2) pos[i * 3 + j] = -spread / 2;
+                        if (pos[i * 3 + j] < -spread / 2) pos[i * 3 + j] = spread / 2;
+                    }
+                }
+                geometry.attributes.position.needsUpdate = true;
+
+                // Subtle camera follow mouse
+                camera.position.x += (mouseX * 2 - camera.position.x) * 0.02;
+                camera.position.y += (mouseY * 2 - camera.position.y) * 0.02;
+                camera.lookAt(scene.position);
+
+                particles.rotation.y += 0.0005;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            });
+        }
+
+        // ===== SCROLL ANIMATIONS =====
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Fade-up animation for each section's elements
+            gsap.utils.toArray('.section').forEach(section => {
+                const elements = section.querySelectorAll(
+                    '.section-label, .section-title, .section-description, .glass-card, .problem-card, .solution-card, .usage-step, .arch-step'
+                );
+
+                // Set initial hidden state
+                gsap.set(elements, { y: 60, opacity: 0 });
+
+                // Reveal when section scrolls into view — once: true means it stays visible
+                ScrollTrigger.create({
+                    trigger: section,
+                    start: 'top 85%',
+                    once: true,
+                    onEnter: () => {
+                        gsap.to(elements, {
+                            y: 0,
+                            opacity: 1,
+                            duration: 0.8,
+                            stagger: 0.12,
+                            ease: 'power3.out'
+                        });
+                    }
+                });
+            });
+
+            // Hero content entrance
+            const heroElements = document.querySelectorAll('.hero-content > *');
+            gsap.set(heroElements, { y: 40, opacity: 0 });
+            gsap.to(heroElements, {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                stagger: 0.2,
+                ease: 'power3.out',
+                delay: 0.3
+            });
+        }
+
+        // ===== INIT EVERYTHING =====
+        document.addEventListener('DOMContentLoaded', () => {
+            initHeroScene();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>
