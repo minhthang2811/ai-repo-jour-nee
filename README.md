@@ -47,6 +47,7 @@ This project leverages AI to transform complex open-source repositories into **s
 | 17 | [spec-kit](./spec-kit/) | 🛠️ Developer Tools | Toolkit to help you get started with Spec-Driven Development | [github/spec-kit](https://github.com/github/spec-kit) |
 | 18 | [superpowers](./superpowers/) | 🤖 AI Agents & Skills | A complete software development methodology for coding agents — composable skills and instructions that make AI agents work the way you want | [obra/superpowers](https://github.com/obra/superpowers) |
 | 19 | [taste-skill](./taste-skill/) | 🎨 Design & Quality | Gives your AI good taste — stops the AI from generating boring, generic slop | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) |
+| 20 | [worldmonitor](./worldmonitor/) | 🌍 AI Applications | Real-time global intelligence dashboard — AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking | [koala73/worldmonitor](https://github.com/koala73/worldmonitor) |
 
 ---
 
@@ -59,6 +60,7 @@ This project leverages AI to transform complex open-source repositories into **s
 | 🧩 **AI Coding Assistants** | 2 | Agent harness systems and optimization for tools like Claude Code and Codex |
 | 🔍 **Understanding AI** | 3 | Tools and courses that make AI models and codebases explorable and queryable |
 | 🎨 **Design & Quality** | 1 | Skills that inject taste and quality standards into AI-generated output |
+| 🌍 **AI Applications** | 1 | Real-world applications and dashboards powered by AI |
 
 ---
 
